@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom'; // Import useNavigate
 import { Mail, Lock, GraduationCap, ShieldCheck } from 'lucide-react';
 import AuthLayout from '../components/Layout/AuthLayout';
 import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
 
 const Login = () => {
-    const [role, setRole] = useState('student'); // 'student' or 'faculty'
+    const navigate = useNavigate(); // Initialize navigate
+    const [role, setRole] = useState('student');
     const [formData, setFormData] = useState({ email: '', password: '' });
 
     const handleChange = (e) => {
@@ -17,10 +18,19 @@ const Login = () => {
         setRole(newRole);
     };
 
+    // New function to handle the login submission
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        // Here you would normally validate credentials with an API
+        console.log("Logging in as:", role, formData);
+        
+        // On success, redirect to the dashboard
+        navigate('/dashboard');
+    };
+
     return (
         <AuthLayout>
             <div className="w-full">
-                {/* Role Tabs */}
                 <div className="flex bg-gray-100 p-1 rounded-2xl mb-10 w-fit mx-auto md:mx-0">
                     <button
                         onClick={() => handleRoleChange('student')}
@@ -51,7 +61,7 @@ const Login = () => {
                     </p>
                 </div>
 
-                <form className="space-y-6">
+                <form className="space-y-6" onSubmit={handleSubmit}> {/* Added onSubmit */}
                     <Input
                         label="Email Address"
                         name="email"
@@ -60,6 +70,7 @@ const Login = () => {
                         icon={Mail}
                         value={formData.email}
                         onChange={handleChange}
+                        required
                     />
                     <Input
                         label="Password"
@@ -69,11 +80,12 @@ const Login = () => {
                         icon={Lock}
                         value={formData.password}
                         onChange={handleChange}
+                        required
                     />
 
                     <div className="flex items-center justify-between text-sm mb-8">
                         <label className="flex items-center text-gray-600 cursor-pointer">
-                            <input type="checkbox" className="mr-2 w-4 h-4 rounded border-gray-300 text-orange focus:ring-orange/20" />
+                            <input type="checkbox" className="mr-2 w-4 h-4 rounded border-gray-300 text-orange-600 focus:ring-orange/20" />
                             Remember me
                         </label>
                         <button type="button" className="font-semibold text-teal-600 hover:text-teal-700 transition-colors">
