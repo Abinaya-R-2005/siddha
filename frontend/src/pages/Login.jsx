@@ -1,0 +1,103 @@
+import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { Mail, Lock, GraduationCap, ShieldCheck } from 'lucide-react';
+import AuthLayout from '../components/Layout/AuthLayout';
+import Input from '../components/ui/Input';
+import Button from '../components/ui/Button';
+
+const Login = () => {
+    const [role, setRole] = useState('student'); // 'student' or 'faculty'
+    const [formData, setFormData] = useState({ email: '', password: '' });
+
+    const handleChange = (e) => {
+        setFormData({ ...formData, [e.target.name]: e.target.value });
+    };
+
+    const handleRoleChange = (newRole) => {
+        setRole(newRole);
+    };
+
+    return (
+        <AuthLayout>
+            <div className="w-full">
+                {/* Role Tabs */}
+                <div className="flex bg-gray-100 p-1 rounded-2xl mb-10 w-fit mx-auto md:mx-0">
+                    <button
+                        onClick={() => handleRoleChange('student')}
+                        className={`flex items-center gap-2 px-6 py-3 rounded-xl transition-all duration-300 ${role === 'student'
+                            ? 'bg-white text-gray-800 shadow-sm font-bold'
+                            : 'text-gray-500 hover:text-gray-700'
+                            }`}
+                    >
+                        <GraduationCap size={20} />
+                        <span>Student Scholar</span>
+                    </button>
+                    <button
+                        onClick={() => handleRoleChange('faculty')}
+                        className={`flex items-center gap-2 px-6 py-4 rounded-xl transition-all duration-300 ${role === 'faculty'
+                            ? 'bg-[#B35900] text-white shadow-lg font-bold'
+                            : 'text-gray-500 hover:text-gray-700'
+                            }`}
+                    >
+                        <ShieldCheck size={20} />
+                        <span>Admin Faculty</span>
+                    </button>
+                </div>
+
+                <div className="mb-10">
+                    <h2 className="text-4xl font-serif font-bold text-gray-900 mb-2">Welcome Back</h2>
+                    <p className="text-gray-500">
+                        Sign in to access your {role === 'student' ? 'educational' : 'administrative'} dashboard
+                    </p>
+                </div>
+
+                <form className="space-y-6">
+                    <Input
+                        label="Email Address"
+                        name="email"
+                        type="email"
+                        placeholder="scholar@siddha.edu"
+                        icon={Mail}
+                        value={formData.email}
+                        onChange={handleChange}
+                    />
+                    <Input
+                        label="Password"
+                        name="password"
+                        type="password"
+                        placeholder="Enter your password"
+                        icon={Lock}
+                        value={formData.password}
+                        onChange={handleChange}
+                    />
+
+                    <div className="flex items-center justify-between text-sm mb-8">
+                        <label className="flex items-center text-gray-600 cursor-pointer">
+                            <input type="checkbox" className="mr-2 w-4 h-4 rounded border-gray-300 text-orange focus:ring-orange/20" />
+                            Remember me
+                        </label>
+                        <button type="button" className="font-semibold text-teal-600 hover:text-teal-700 transition-colors">
+                            Forgot password?
+                        </button>
+                    </div>
+
+                    <Button type="submit" className="w-full">
+                        Sign In
+                    </Button>
+
+                    <div className="text-center mt-8 text-gray-500 font-medium">
+                        Don't have an account?{' '}
+                        <Link
+                            to={`/register/${role}`}
+                            className="text-teal-600 hover:underline font-bold"
+                        >
+                            Request Access
+                        </Link>
+                    </div>
+                </form>
+            </div>
+        </AuthLayout>
+    );
+};
+
+export default Login;
