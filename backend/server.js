@@ -15,12 +15,17 @@ app.use(express.json());
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/siddha';
 const JWT_SECRET = 'siddha_veda_intelligence_secret_key_2024'; // Hardcoded as per user preference to simplify .env
 
-mongoose.connect(MONGODB_URI)
+mongoose.connect(MONGODB_URI, {
+    serverSelectionTimeoutMS: 5000, // Timeout after 5s instead of default 30s
+})
     .then(() => {
-        console.log('Connected to MongoDB');
+        console.log('✅ Connected to MongoDB');
         createInitialAdmin();
     })
-    .catch(err => console.error('Could not connect to MongoDB', err));
+    .catch(err => {
+        console.error('❌ Could not connect to MongoDB. Please check if your IP is whitelisted in MongoDB Atlas.');
+        console.error('Error details:', err.message);
+    });
 
 const createInitialAdmin = async () => {
     try {

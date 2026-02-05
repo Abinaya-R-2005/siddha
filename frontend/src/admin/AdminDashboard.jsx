@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import {
-    LayoutDashboard, Users, UserCheck, ShieldCheck,
-    LogOut, Search, Filter, MoreVertical,
-    TrendingUp, Calendar, Bell, FileText, ChevronDown, Trash2, Edit, Download, Upload, X
+    LayoutDashboard, Users,
+    LogOut, Search,
+    TrendingUp, Calendar, FileText, ChevronDown, Trash2, Edit, Download, Upload, X
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
