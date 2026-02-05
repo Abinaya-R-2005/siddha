@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom'; // Import useNavigate
 import { Mail, Lock, GraduationCap, ShieldCheck } from 'lucide-react';
+import axios from 'axios';
 import AuthLayout from '../components/Layout/AuthLayout';
 import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
@@ -19,13 +20,23 @@ const Login = () => {
     };
 
     // New function to handle the login submission
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        // Here you would normally validate credentials with an API
-        console.log("Logging in as:", role, formData);
-        
-        // On success, redirect to the dashboard
-        navigate('/dashboard');
+        try {
+            const response = await axios.post('http://localhost:5000/api/auth/login', formData);
+            const { token, user } = response.data;
+
+            localStorage.setItem('token', token);
+            localStorage.setItem('user', JSON.stringify(user));
+
+            if (user.role === 'admin') {
+                navigate('/admin');
+            } else {
+                navigate('/dashboard');
+            }
+        } catch (err) {
+            alert(err.response?.data?.message || 'Login failed');
+        }
     };
 
     return (

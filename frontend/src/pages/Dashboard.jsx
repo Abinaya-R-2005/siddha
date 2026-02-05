@@ -1,17 +1,17 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  LayoutDashboard, BookOpen, LineChart, User, 
-  LogOut, Menu, X, Award, Flame, Clock, 
-  Calendar, ChevronDown, MonitorPlay
+import {
+  LayoutDashboard, BookOpen, LineChart, User,
+  LogOut, Menu, X, Award, Flame, Clock,
+  Calendar, ChevronDown
 } from 'lucide-react';
 
 const Dashboard = () => {
   const [isSidebarOpen, setSidebarOpen] = useState(true);
   const [selectedSubject, setSelectedSubject] = useState('All Subjects');
   const navigate = useNavigate();
-  
+
   const user = { name: "Scholar", role: "student" };
 
   const stats = [
@@ -33,21 +33,21 @@ const Dashboard = () => {
 
   return (
     <div className="flex min-h-screen bg-[#FDFCFB] font-sans text-slate-900">
-      
+
       {/* SIDEBAR */}
       <aside className={`${isSidebarOpen ? 'w-64' : 'w-20'} bg-[#0F172A] text-white transition-all duration-300 flex flex-col fixed h-full z-50`}>
         <div className="p-6 flex items-center justify-between">
-          {isSidebarOpen && <motion.h1 initial={{opacity:0}} animate={{opacity:1}} className="text-xl font-serif font-bold tracking-tight text-teal-400">Siddha-Veda</motion.h1>}
+          {isSidebarOpen && <motion.h1 initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-xl font-serif font-bold tracking-tight text-teal-400">Siddha-Veda</motion.h1>}
           <button onClick={() => setSidebarOpen(!isSidebarOpen)} className="p-1 hover:bg-slate-800 rounded-md">
             {isSidebarOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
         </div>
 
         <nav className="flex-1 mt-4 px-4 space-y-2">
-          <NavItem icon={<LayoutDashboard size={20}/>} label="Dashboard" active={true} isOpen={isSidebarOpen} />
-          <NavItem icon={<BookOpen size={20}/>} label="My Tests" isOpen={isSidebarOpen} />
-          <NavItem icon={<LineChart size={20}/>} label="Progress" isOpen={isSidebarOpen} />
-          <NavItem icon={<User size={20}/>} label="Profile" isOpen={isSidebarOpen} />
+          <NavItem icon={<LayoutDashboard size={20} />} label="Dashboard" active={true} isOpen={isSidebarOpen} />
+          <NavItem icon={<BookOpen size={20} />} label="My Tests" isOpen={isSidebarOpen} />
+          <NavItem icon={<LineChart size={20} />} label="Progress" isOpen={isSidebarOpen} />
+          <NavItem icon={<User size={20} />} label="Profile" isOpen={isSidebarOpen} />
         </nav>
 
         <div className="p-4 border-t border-slate-800">
@@ -66,17 +66,17 @@ const Dashboard = () => {
             <p className="text-gray-500 text-lg">Continue your journey through ancient wisdom</p>
           </div>
           <div className="flex gap-2 mb-2">
-             {/* Small visual heatmap dots from image */}
-             {[...Array(8)].map((_,i) => (
-               <div key={i} className={`w-6 h-6 rounded-md ${i < 4 ? 'bg-teal-200' : 'bg-teal-50'}`} />
-             ))}
+            {/* Small visual heatmap dots from image */}
+            {[...Array(8)].map((_, i) => (
+              <div key={i} className={`w-6 h-6 rounded-md ${i < 4 ? 'bg-teal-200' : 'bg-teal-50'}`} />
+            ))}
           </div>
         </header>
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
           {stats.map((stat, idx) => (
-            <motion.div 
+            <motion.div
               whileHover={{ y: -5 }}
               key={idx} className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm transition-all"
             >
@@ -95,7 +95,7 @@ const Dashboard = () => {
           <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
             <h3 className="text-2xl font-serif font-bold text-slate-800">Upcoming Exams</h3>
             <div className="relative group">
-              <select 
+              <select
                 onChange={(e) => setSelectedSubject(e.target.value)}
                 className="appearance-none bg-white border border-gray-200 rounded-lg px-4 py-2 pr-10 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-teal-500/20 transition-all cursor-pointer"
               >
@@ -126,16 +126,16 @@ const Dashboard = () => {
                     </span>
                     <Calendar className="text-gray-300" size={20} />
                   </div>
-                  
+
                   <h4 className="text-xl font-bold text-slate-900 mb-4 group-hover:text-teal-600 transition-colors">{exam.title}</h4>
-                  
+
                   <div className="flex flex-wrap gap-y-2 gap-x-6 text-sm text-gray-500 mb-8">
-                    <div className="flex items-center gap-2"><Calendar size={16} className="text-teal-500"/> {exam.date}</div>
-                    <div className="flex items-center gap-2"><Clock size={16} className="text-teal-500"/> {exam.time}</div>
+                    <div className="flex items-center gap-2"><Calendar size={16} className="text-teal-500" /> {exam.date}</div>
+                    <div className="flex items-center gap-2"><Clock size={16} className="text-teal-500" /> {exam.time}</div>
                     <div className="text-gray-400 font-medium">{exam.duration} • {exam.questions} questions</div>
                   </div>
 
-                  <motion.button 
+                  <motion.button
                     whileTap={{ scale: 0.95 }}
                     className="w-full bg-[#0D9488] hover:bg-[#0A756C] text-white font-bold py-4 rounded-xl transition-all shadow-lg shadow-teal-900/10 flex items-center justify-center gap-2"
                   >
@@ -163,7 +163,7 @@ const Dashboard = () => {
           </div>
           <div className="grid grid-flow-col grid-rows-7 gap-[12px] w-max overflow-x-auto">
             {activityData.map((level, i) => (
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.005 }}
                 key={i} className={`w-[14px] h-[14px] sm:w-[18px] sm:h-[18px] rounded-[2px] cursor-pointer hover:ring-2 hover:ring-teal-400 ${level === 0 ? 'bg-gray-100' : level === 1 ? 'bg-teal-100' : level === 2 ? 'bg-teal-300' : 'bg-teal-600'}`}
               />

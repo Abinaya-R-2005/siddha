@@ -4,6 +4,7 @@ import Login from './pages/Login';
 import StudentRegister from './pages/register/StudentRegister';
 import FacultyRegister from './pages/register/FacultyRegister';
 import Dashboard from './pages/Dashboard';
+import AdminDashboard from './admin/AdminDashboard';
 
 function App() {
   return (
@@ -11,7 +12,7 @@ function App() {
       <Routes>
         {/* Default Route: Redirects to Login */}
         <Route path="/" element={<Navigate to="/login" replace />} />
-        
+
         {/* Auth Routes */}
         <Route path="/login" element={<Login />} />
         <Route path="/register/student" element={<StudentRegister />} />
@@ -19,6 +20,7 @@ function App() {
 
         {/* Protected Dashboard Route */}
         <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/admin" element={<AdminDashboard />} />
 
         {/* Catch-all: Redirect unknown URLs back to login */}
         <Route path="*" element={<Navigate to="/login" replace />} />

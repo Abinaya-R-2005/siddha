@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import { ChevronRight, ChevronLeft, Check, User, Phone, BookOpen, Briefcase, Building, FileText, Lock } from 'lucide-react';
 import AuthLayout from '../../components/Layout/AuthLayout';
 import Input from '../../components/ui/Input';
@@ -20,9 +21,24 @@ const steps = [
 const FacultyRegister = () => {
     const [currentStep, setCurrentStep] = useState(1);
     const [formData, setFormData] = useState({});
+    const navigate = useNavigate();
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        try {
+            const response = await axios.post('http://localhost:5000/api/auth/register', {
+                ...formData,
+                role: 'faculty'
+            });
+            localStorage.setItem('token', response.data.token);
+            navigate('/dashboard');
+        } catch (err) {
+            alert(err.response?.data?.message || 'Registration failed');
+        }
     };
 
     const nextStep = () => setCurrentStep((prev) => Math.min(prev + 1, steps.length));
@@ -163,7 +179,7 @@ const FacultyRegister = () => {
                 </div>
             </div>
 
-            <form onSubmit={(e) => e.preventDefault()}>
+            <form onSubmit={handleSubmit}>
                 <AnimatePresence mode="wait">
                     <motion.div
                         key={currentStep}
