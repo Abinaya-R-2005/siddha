@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
     LayoutDashboard, Users,
     LogOut, Search,
-    TrendingUp, Calendar, FileText, ChevronDown, Trash2, Edit, Download, Upload, X
+    TrendingUp, Calendar, FileText, ChevronDown, Trash2, Edit, Download, Upload, X, Check
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -41,7 +41,11 @@ const AdminDashboard = () => {
             setQuestionBanks(qbResponse.data);
 
         } catch (err) {
-            console.log("Using mock data as backend failed or unauthorized");
+            console.log("Using mock data as backend failed or unauthorized", err);
+            if (err.response && (err.response.status === 401 || err.response.status === 403)) {
+                localStorage.removeItem('token');
+                navigate('/login');
+            }
         }
     };
 
@@ -300,7 +304,11 @@ const AdminDashboard = () => {
 
             {/* Upload Modal */}
             {isUploadModalOpen && (
-                <UploadModal onClose={() => setIsUploadModalOpen(false)} onSuccess={handleUploadSuccess} />
+                <UploadModal
+                    onClose={() => setIsUploadModalOpen(false)}
+                    onSuccess={handleUploadSuccess}
+                    onAuthError={handleLogout}
+                />
             )}
         </div>
     );
@@ -327,12 +335,14 @@ const OverviewCard = ({ icon, value, label }) => (
     </div>
 );
 
-const UploadModal = ({ onClose, onSuccess }) => {
+const UploadModal = ({ onClose, onSuccess, onAuthError }) => {
     const [formData, setFormData] = useState({
         title: '',
         subject: 'Noi Naadal',
         difficulty: 'Easy',
-        file: null
+        file: null,
+        manualCount: 10,
+        manualAnswers: new Array(10).fill(0)
     });
     const [loading, setLoading] = useState(false);
 
@@ -347,6 +357,17 @@ const UploadModal = ({ onClose, onSuccess }) => {
         data.append('difficulty', formData.difficulty);
         data.append('file', formData.file);
 
+        // If not JSON, append manual questions structure
+        if (!formData.file.name.endsWith('.json')) {
+            const generatedQuestions = formData.manualAnswers.map((ans, idx) => ({
+                question: `Question ${idx + 1}`,
+                options: ["Option A", "Option B", "Option C", "Option D"],
+                answer: ans
+            }));
+            data.append('manualQuestions', JSON.stringify(generatedQuestions));
+            data.append('questionsCount', formData.manualCount);
+        }
+
         try {
             const token = localStorage.getItem('token');
             await axios.post('http://localhost:5000/api/admin/question-banks', data, {
@@ -357,7 +378,12 @@ const UploadModal = ({ onClose, onSuccess }) => {
             });
             onSuccess();
         } catch (err) {
-            alert('Upload failed: ' + (err.response?.data?.message || err.message));
+            console.error(err);
+            if (err.response && (err.response.status === 401 || err.response.status === 403)) {
+                onAuthError();
+            } else {
+                alert('Upload failed: ' + (err.response?.data?.message || err.message));
+            }
         } finally {
             setLoading(false);
         }
@@ -372,64 +398,119 @@ const UploadModal = ({ onClose, onSuccess }) => {
                 </div>
 
                 <form onSubmit={handleSubmit} className="p-6 space-y-4">
-                    <div>
-                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Title</label>
-                        <input
-                            required
-                            type="text"
-                            className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#C2410C]/20 text-sm"
-                            placeholder="e.g., Advanced Diagnostics"
-                            value={formData.title}
-                            onChange={e => setFormData({ ...formData, title: e.target.value })}
-                        />
-                    </div>
-
-                    <div>
-                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Subject</label>
-                        <select
-                            className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#C2410C]/20 text-sm bg-white"
-                            value={formData.subject}
-                            onChange={e => setFormData({ ...formData, subject: e.target.value })}
-                        >
-                            <option>Noi Naadal</option>
-                            <option>Maruthuvam</option>
-                            <option>Gunapadam</option>
-                            <option>Sirappu Maruthuvam</option>
-                            <option>Varma Kalai</option>
-                        </select>
-                    </div>
-
-                    <div>
-                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Difficulty</label>
-                        <select
-                            className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#C2410C]/20 text-sm bg-white"
-                            value={formData.difficulty}
-                            onChange={e => setFormData({ ...formData, difficulty: e.target.value })}
-                        >
-                            <option>Easy</option>
-                            <option>Medium</option>
-                            <option>Hard</option>
-                        </select>
-                    </div>
-
-                    <div>
-                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Upload File</label>
-                        <div className="border-2 border-dashed border-gray-200 rounded-xl p-8 text-center hover:bg-gray-50 transition-colors cursor-pointer relative">
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Title</label>
                             <input
                                 required
-                                type="file"
-                                className="absolute inset-0 opacity-0 cursor-pointer"
-                                onChange={e => setFormData({ ...formData, file: e.target.files[0] })}
+                                type="text"
+                                className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#C2410C]/20 text-sm"
+                                placeholder="e.g., Annual Exam"
+                                value={formData.title}
+                                onChange={e => setFormData({ ...formData, title: e.target.value })}
                             />
-                            <Upload className="mx-auto text-gray-300 mb-2" size={32} />
-                            <p className="text-sm font-medium text-gray-500">
-                                {formData.file ? formData.file.name : "Click to upload or drag and drop"}
-                            </p>
-                            <p className="text-xs text-gray-400 mt-1">PDF or JSON files only</p>
+                        </div>
+                        <div>
+                            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Subject</label>
+                            <select
+                                className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#C2410C]/20 text-sm bg-white"
+                                value={formData.subject}
+                                onChange={e => setFormData({ ...formData, subject: e.target.value })}
+                            >
+                                <option>Noi Naadal</option>
+                                <option>Maruthuvam</option>
+                                <option>Gunapadam</option>
+                                <option>Sirappu Maruthuvam</option>
+                                <option>Varma Kalai</option>
+                            </select>
                         </div>
                     </div>
 
-                    <div className="flex gap-3 pt-4">
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Difficulty</label>
+                            <select
+                                className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#C2410C]/20 text-sm bg-white"
+                                value={formData.difficulty}
+                                onChange={e => setFormData({ ...formData, difficulty: e.target.value })}
+                            >
+                                <option>Easy</option>
+                                <option>Medium</option>
+                                <option>Hard</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Upload Question Paper</label>
+                            <input
+                                required
+                                type="file"
+                                accept=".json,.pdf,.jpg,.jpeg,.png"
+                                className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-[#C2410C]/10 file:text-[#C2410C] hover:file:bg-[#C2410C]/20"
+                                onChange={e => setFormData({ ...formData, file: e.target.files[0] })}
+                            />
+                        </div>
+                    </div>
+
+                    {/* Answer Key Generator for Non-JSON Files */}
+                    {formData.file && !formData.file.name.endsWith('.json') && (
+                        <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 animate-in slide-in-from-top-2">
+                            <div className="flex justify-between items-center mb-4">
+                                <h4 className="font-bold text-slate-700 text-sm">Answer Key Setup</h4>
+                                <div className="flex items-center gap-2">
+                                    <label className="text-xs font-semibold text-slate-500">Total Questions:</label>
+                                    <input
+                                        type="number"
+                                        min="1"
+                                        max="100"
+                                        className="w-16 px-2 py-1 rounded border border-gray-300 text-center text-sm font-bold"
+                                        value={formData.manualCount}
+                                        onChange={(e) => {
+                                            const count = parseInt(e.target.value) || 0;
+                                            setFormData({
+                                                ...formData,
+                                                manualCount: count,
+                                                manualAnswers: new Array(count).fill(0)
+                                            });
+                                        }}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="max-h-48 overflow-y-auto pr-2 grid grid-cols-5 gap-2">
+                                {Array.from({ length: formData.manualCount }).map((_, qIdx) => (
+                                    <div key={qIdx} className="flex flex-col items-center gap-1 bg-white p-2 rounded border border-slate-200">
+                                        <span className="text-[10px] font-bold text-slate-400">Q{qIdx + 1}</span>
+                                        <select
+                                            className="w-full text-xs font-bold text-slate-700 border-none bg-transparent focus:ring-0 cursor-pointer text-center"
+                                            value={formData.manualAnswers?.[qIdx] || 0}
+                                            onChange={(e) => {
+                                                const newAnswers = [...(formData.manualAnswers || [])];
+                                                newAnswers[qIdx] = parseInt(e.target.value);
+                                                setFormData({ ...formData, manualAnswers: newAnswers });
+                                            }}
+                                        >
+                                            <option value={0}>A</option>
+                                            <option value={1}>B</option>
+                                            <option value={2}>C</option>
+                                            <option value={3}>D</option>
+                                        </select>
+                                    </div>
+                                ))}
+                            </div>
+                            <p className="text-[10px] text-slate-400 mt-2 text-center">
+                                Select the correct option for each question corresponding to the uploaded file.
+                            </p>
+                        </div>
+                    )}
+
+                    {formData.file && formData.file.name.endsWith('.json') && (
+                        <div className="bg-green-50 p-3 rounded-lg border border-green-100 flex items-center gap-2">
+                            <Check className="text-green-600" size={16} />
+                            <p className="text-xs text-green-700 font-medium">JSON format detected. Questions and answers will be parsed automatically.</p>
+                        </div>
+                    )}
+
+                    <div className="flex gap-3 pt-2">
                         <button
                             type="button"
                             onClick={onClose}
@@ -442,7 +523,7 @@ const UploadModal = ({ onClose, onSuccess }) => {
                             disabled={loading}
                             className="flex-1 py-2.5 rounded-lg bg-[#C2410C] hover:bg-[#9a3412] text-white font-bold shadow-lg shadow-orange-900/20 transition-all disabled:opacity-70"
                         >
-                            {loading ? 'Uploading...' : 'Upload'}
+                            {loading ? 'Uploading...' : 'Upload Bank'}
                         </button>
                     </div>
                 </form>

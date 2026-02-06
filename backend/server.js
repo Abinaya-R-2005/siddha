@@ -13,6 +13,7 @@ dotenv.config();
 const app = express();
 app.use(cors());
 app.use(express.json());
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // --- CONFIGURATION ---
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/siddha';
@@ -38,15 +39,22 @@ const upload = multer({ storage });
 
 // --- MODELS ---
 
+// --- MODELS ---
+
 const UserSchema = new mongoose.Schema({
     fullName: { type: String, required: true },
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
     role: { type: String, enum: ['student', 'faculty', 'admin'], default: 'student' },
-    // Student fields
+    // Student & Profile fields
     regNo: String,
     course: String,
     year: String,
+    mobile: String,
+    address: String,
+    expertise: String, // Maps to bio
+    studentId: { type: String, unique: true, sparse: true },
+    lastActive: Date
 }, { timestamps: true });
 
 const User = mongoose.model('User', UserSchema);
@@ -55,7 +63,12 @@ const QuestionBankSchema = new mongoose.Schema({
     title: String,
     subject: String,
     difficulty: String,
-    filename: String,
+    filename: String, // For legacy/file uploads
+    questions: [{
+        question: String,
+        options: [String],
+        answer: Number // Index of the correct option
+    }],
     questionsCount: { type: Number, default: 0 },
     attempts: { type: Number, default: 0 }
 }, { timestamps: true });
@@ -66,6 +79,7 @@ const AttemptSchema = new mongoose.Schema({
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     testId: { type: mongoose.Schema.Types.ObjectId, ref: 'QuestionBank' },
     score: { type: Number, required: true },
+    totalQuestions: Number,
     subject: String,
     date: { type: Date, default: Date.now }
 }, { timestamps: true });
@@ -82,7 +96,7 @@ const verifyToken = (req, res, next) => {
         req.user = decoded;
         next();
     } catch (err) {
-        res.status(400).json({ message: 'Invalid token' });
+        res.status(401).json({ message: 'Invalid token' });
     }
 };
 
@@ -95,7 +109,22 @@ const verifyAdmin = (req, res, next) => {
 
 // --- ROUTES ---
 
-// 1. Auth
+// 1. Auth & Profile
+app.post('/api/auth/register', async (req, res) => {
+    try {
+        const { fullName, email, password, role } = req.body;
+        const exists = await User.findOne({ email });
+        if (exists) return res.status(400).json({ message: 'User already exists' });
+
+        const hashedPassword = await bcrypt.hash(password, 10);
+        const newUser = new User({ ...req.body, password: hashedPassword });
+        await newUser.save();
+
+        const token = jwt.sign({ id: newUser._id, role: newUser.role }, JWT_SECRET, { expiresIn: '1d' });
+        res.status(201).json({ token, user: { id: newUser._id, email: newUser.email, role: newUser.role, fullName: newUser.fullName } });
+    } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
 app.post('/api/auth/login', async (req, res) => {
     try {
         const { email, password } = req.body;
@@ -103,18 +132,46 @@ app.post('/api/auth/login', async (req, res) => {
         if (!user || !(await bcrypt.compare(password, user.password))) {
             return res.status(400).json({ message: 'Invalid credentials' });
         }
+        user.lastActive = new Date();
+        await user.save();
         const token = jwt.sign({ id: user._id, role: user.role }, JWT_SECRET, { expiresIn: '1d' });
         res.json({ token, user: { id: user._id, email: user.email, role: user.role, fullName: user.fullName } });
     } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
-// 2. Admin Dashboard Stats
+app.get('/api/user/profile', verifyToken, async (req, res) => {
+    try {
+        const user = await User.findById(req.user.id).select('-password');
+        res.json(user);
+    } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
+app.post('/api/user/update', verifyToken, async (req, res) => {
+    try {
+        const updates = req.body;
+        const user = await User.findByIdAndUpdate(req.user.id, updates, { new: true }).select('-password');
+        res.json(user);
+    } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
+// 2. Admin: Dashboard Stats & Student List
 app.get('/api/admin/dashboard-stats', verifyAdmin, async (req, res) => {
     try {
         const totalStudents = await User.countDocuments({ role: 'student' });
         const totalTests = await QuestionBank.countDocuments();
+
+        // Calculate dynamic stats
+        const allAttempts = await Attempt.find();
+        const globalAverage = allAttempts.length > 0
+            ? (allAttempts.reduce((acc, curr) => acc + curr.score, 0) / allAttempts.length).toFixed(1)
+            : 0;
+
+        const activeToday = await User.countDocuments({
+            lastActive: { $gte: new Date(new Date().setHours(0, 0, 0, 0)) }
+        });
+
         res.json({
-            stats: { totalStudents, totalTests, globalAverage: 78, activeToday: 12 },
+            stats: { totalStudents, totalTests, globalAverage, activeToday },
             charts: {
                 subjectMastery: [
                     { name: 'Noi Naadal', score: 82 }, { name: 'Gunapadam', score: 65 }, { name: 'Maruthuvam', score: 88 }
@@ -127,21 +184,118 @@ app.get('/api/admin/dashboard-stats', verifyAdmin, async (req, res) => {
     } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
-// 3. Question Bank Upload
+app.get('/api/admin/users', verifyAdmin, async (req, res) => {
+    try {
+        const users = await User.find({ role: 'student' }).select('-password');
+        // Enhance user objects with stats
+        const usersWithStats = await Promise.all(users.map(async (u) => {
+            const attempts = await Attempt.find({ userId: u._id });
+            const avg = attempts.length > 0 ? (attempts.reduce((a, b) => a + b.score, 0) / attempts.length).toFixed(1) : 0;
+            return {
+                ...u._doc,
+                testsCompleted: attempts.length,
+                averageScore: avg
+            };
+        }));
+        res.json(usersWithStats);
+    } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
+// 3. Question Bank Management
+app.get('/api/admin/question-banks', verifyAdmin, async (req, res) => {
+    try {
+        const banks = await QuestionBank.find().sort({ createdAt: -1 });
+        res.json(banks);
+    } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
 app.post('/api/admin/question-banks', verifyAdmin, upload.single('file'), async (req, res) => {
     try {
-        const newBank = new QuestionBank({ ...req.body, filename: req.file.filename });
+        let questions = [];
+        let questionsCount = 0;
+
+        // 1. Try JSON File Parsing
+        if (req.file && req.file.mimetype === 'application/json') {
+            const fileData = fs.readFileSync(req.file.path, 'utf8');
+            const parsed = JSON.parse(fileData);
+            questions = parsed.questions || [];
+            questionsCount = questions.length;
+        }
+        // 2. Try Manual Questions (from PDF/Image uploads)
+        else if (req.body.manualQuestions) {
+            try {
+                questions = JSON.parse(req.body.manualQuestions);
+                questionsCount = parseInt(req.body.questionsCount) || questions.length;
+            } catch (pErr) {
+                console.error("Failed to parse manual questions:", pErr);
+            }
+        }
+
+        const newBank = new QuestionBank({
+            ...req.body,
+            filename: req.file ? req.file.filename : null,
+            questions: questions,
+            questionsCount: questionsCount || req.body.questionsCount || 0
+        });
         await newBank.save();
         res.status(201).json(newBank);
     } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
-// 4. Student Progress Analytics
+// 4. Student: Tests & Progress
+app.get('/api/user/tests', verifyToken, async (req, res) => {
+    try {
+        const tests = await QuestionBank.find().select('-questions.answer'); // Hide answers
+        res.json(tests);
+    } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
+app.get('/api/user/tests/:id', verifyToken, async (req, res) => {
+    try {
+        const test = await QuestionBank.findById(req.params.id).select('-questions.answer');
+        if (!test) return res.status(404).json({ message: 'Test not found' });
+        res.json(test);
+    } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
+app.post('/api/user/tests/:id/submit', verifyToken, async (req, res) => {
+    try {
+        const { answers } = req.body; // Array of selected option indices
+        const test = await QuestionBank.findById(req.params.id);
+        if (!test) return res.status(404).json({ message: 'Test not found' });
+
+        let score = 0;
+        test.questions.forEach((q, idx) => {
+            if (answers[idx] === q.answer) score++;
+        });
+
+        const percentage = ((score / test.questions.length) * 100).toFixed(1);
+
+        const attempt = new Attempt({
+            userId: req.user.id,
+            testId: test._id,
+            score: parseFloat(percentage),
+            totalQuestions: test.questions.length,
+            subject: test.subject
+        });
+        await attempt.save();
+
+        test.attempts += 1;
+        await test.save();
+
+        res.json({
+            score: percentage,
+            correct: score,
+            total: test.questions.length,
+            message: "Test submitted successfully"
+        });
+    } catch (err) { res.status(500).json({ message: err.message }); }
+});
 
 app.get('/api/user/progress', verifyToken, async (req, res) => {
     try {
         const attempts = await Attempt.find({ userId: req.user.id }).sort({ date: 1 });
-        
+
         if (attempts.length === 0) return res.json({ data: null });
 
         // Calculate Stats
@@ -159,9 +313,9 @@ app.get('/api/user/progress', verifyToken, async (req, res) => {
 
         res.json({
             data: {
-                history: attempts.map(a => ({ 
-                    date: new Date(a.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }), 
-                    score: a.score 
+                history: attempts.map(a => ({
+                    date: new Date(a.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+                    score: a.score
                 })),
                 stats: { avgScore, improvement, totalTests: attempts.length, rank: "Level 1" },
                 subjectMastery: subjectStats.map(s => ({ subject: s._id, A: s.avg, fullMark: 100 }))

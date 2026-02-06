@@ -7,6 +7,8 @@ import Dashboard from './pages/Dashboard';
 import AdminDashboard from './admin/AdminDashboard';
 import ProfilePage from './pages/ProfilePage';
 import ProgressPage from './pages/ProgressPage';
+import TestPage from './pages/TestPage';
+
 function App() {
   return (
     <Router>
@@ -24,6 +26,7 @@ function App() {
         <Route path="/admin" element={<AdminDashboard />} />
         <Route path="/profilepage" element={<ProfilePage />} />
         <Route path="/progresspage" element={<ProgressPage />} />
+        <Route path="/test/:id" element={<TestPage />} />
         {/* Catch-all: Redirect unknown URLs back to login */}
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>

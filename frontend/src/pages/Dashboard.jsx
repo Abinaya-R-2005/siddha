@@ -10,27 +10,61 @@ import {
 const Dashboard = () => {
   const [isSidebarOpen, setSidebarOpen] = useState(true);
   const [selectedSubject, setSelectedSubject] = useState('All Subjects');
+  const [user, setUser] = useState({ fullName: "Scholar", role: "student" });
+  const [exams, setExams] = useState([]);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  // In a real app, fetch this from your auth state or localStorage
-  const user = { name: "Scholar", role: "student" };
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+          navigate('/login');
+          return;
+        }
+
+        const config = { headers: { Authorization: `Bearer ${token}` } };
+
+        // Fetch user profile
+        const userRes = await fetch('http://localhost:5000/api/user/profile', config);
+        if (userRes.ok) {
+          const userData = await userRes.json();
+          setUser(userData);
+        }
+
+        // Fetch tests
+        const testsRes = await fetch('http://localhost:5000/api/user/tests', config);
+        if (testsRes.ok) {
+          const testsData = await testsRes.json();
+          setExams(testsData);
+        }
+
+      } catch (err) {
+        console.error("Dashboard fetch error:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [navigate]);
 
   const stats = [
-    { label: "Tests Completed", value: "24", sub: "+12% from last month", icon: BookOpen, color: "text-teal-600", bg: "bg-teal-50", category: "This month" },
-    { label: "Overall Score", value: "82.5%", sub: "View Details", icon: Award, color: "text-orange-600", bg: "bg-orange-50", category: "Average", link: "/progresspage" },
+    { label: "Tests Completed", value: user.testsCompleted || "0", sub: "Keep going!", icon: BookOpen, color: "text-teal-600", bg: "bg-teal-50", category: "Overall" },
+    { label: "Average Score", value: `${user.averageScore || 0}%`, sub: "View Details", icon: Award, color: "text-orange-600", bg: "bg-orange-50", category: "Performance", link: "/progresspage" },
     { label: "Day Streak", value: "7", sub: "Keep it up! 🔥", icon: Flame, color: "text-red-600", bg: "bg-red-50", category: "Current" },
-    { label: "Study Hours", value: "156", sub: "26h this week", icon: Clock, color: "text-blue-600", bg: "bg-blue-50", category: "Total" },
-  ];
-
-  const exams = [
-    { id: 1, title: "Diagnostic Methods Assessment", subject: "Noi Naadal", date: "Feb 10, 2026", time: "10:00 AM", duration: "60 mins", questions: 50, color: "bg-[#0D9488]" },
-    { id: 2, title: "Treatment Principles Exam", subject: "Maruthuvam", date: "Feb 12, 2026", time: "2:00 PM", duration: "90 mins", questions: 75, color: "bg-[#C2410C]" },
-    { id: 3, title: "Pharmacology Quiz", subject: "Gunapadam", date: "Feb 15, 2026", time: "11:00 AM", duration: "45 mins", questions: 40, color: "bg-[#2563EB]" },
-    { id: 4, title: "Specialized Medicine Test", subject: "Sirappu Maruthuvam", date: "Feb 18, 2026", time: "9:00 AM", duration: "120 mins", questions: 100, color: "bg-[#9333EA]" },
+    { label: "Role", value: (user.role || 'Student').toUpperCase(), sub: user.course || "BSMS", icon: User, color: "text-blue-600", bg: "bg-blue-50", category: "Account" },
   ];
 
   const activityData = Array.from({ length: 84 }, () => Math.floor(Math.random() * 4));
   const filteredExams = selectedSubject === 'All Subjects' ? exams : exams.filter(e => e.subject === selectedSubject);
+
+  if (loading) return (
+    <div className="min-h-screen flex items-center justify-center bg-[#FDFCFB]">
+      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-teal-600"></div>
+    </div>
+  );
 
   return (
     <div className="flex min-h-screen bg-[#FDFCFB] font-sans text-slate-900">
@@ -44,29 +78,29 @@ const Dashboard = () => {
         </div>
 
         <nav className="flex-1 mt-4 px-4 space-y-2">
-          <NavItem 
-            icon={<LayoutDashboard size={20} />} 
-            label="Dashboard" 
-            active={window.location.pathname === '/dashboard'} 
-            isOpen={isSidebarOpen} 
+          <NavItem
+            icon={<LayoutDashboard size={20} />}
+            label="Dashboard"
+            active={window.location.pathname === '/dashboard'}
+            isOpen={isSidebarOpen}
             onClick={() => navigate('/dashboard')}
           />
-          <NavItem 
-            icon={<LineChart size={20} />} 
-            label="Progress" 
-            isOpen={isSidebarOpen} 
-            onClick={() => navigate('/progresspage')} 
+          <NavItem
+            icon={<LineChart size={20} />}
+            label="Progress"
+            isOpen={isSidebarOpen}
+            onClick={() => navigate('/progresspage')}
           />
-          <NavItem 
-            icon={<User size={20} />} 
-            label="Profile" 
-            isOpen={isSidebarOpen} 
-            onClick={() => navigate('/profilepage')} 
+          <NavItem
+            icon={<User size={20} />}
+            label="Profile"
+            isOpen={isSidebarOpen}
+            onClick={() => navigate('/profilepage')}
           />
         </nav>
 
         <div className="p-4 border-t border-slate-800">
-          <button onClick={() => navigate('/login')} className="flex items-center gap-4 px-4 py-3 w-full text-slate-400 hover:text-white transition-colors hover:bg-red-500/10 rounded-xl">
+          <button onClick={() => { localStorage.removeItem('token'); navigate('/login'); }} className="flex items-center gap-4 px-4 py-3 w-full text-slate-400 hover:text-white transition-colors hover:bg-red-500/10 rounded-xl">
             <LogOut size={20} />
             {isSidebarOpen && <span className="font-medium">Logout</span>}
           </button>
@@ -77,7 +111,7 @@ const Dashboard = () => {
       <main className={`flex-1 transition-all duration-300 ${isSidebarOpen ? 'ml-64' : 'ml-20'} p-8 md:p-12`}>
         <header className="mb-12 flex justify-between items-end">
           <div>
-            <h2 className="text-4xl font-serif font-bold text-gray-900 mb-2">Welcome back, {user.name}</h2>
+            <h2 className="text-4xl font-serif font-bold text-gray-900 mb-2">Welcome back, {user.fullName}</h2>
             <p className="text-gray-500 text-lg">Continue your journey through ancient wisdom</p>
           </div>
         </header>
@@ -87,7 +121,7 @@ const Dashboard = () => {
           {stats.map((stat, idx) => (
             <motion.div
               whileHover={{ y: -5 }}
-              key={idx} 
+              key={idx}
               onClick={() => stat.link && navigate(stat.link)}
               className={`bg-white p-6 rounded-2xl border border-gray-100 shadow-sm transition-all ${stat.link ? 'cursor-pointer hover:border-teal-200' : ''}`}
             >
@@ -129,23 +163,24 @@ const Dashboard = () => {
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.9 }}
                   whileHover={{ y: -8 }}
-                  key={exam.id}
+                  key={exam._id}
                   className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm relative overflow-hidden group"
                 >
                   <div className="flex justify-between items-start mb-6">
-                    <span className={`${exam.color} text-white text-[11px] font-bold px-3 py-1 rounded-full uppercase tracking-wider`}>
+                    <span className={`bg-teal-600 text-white text-[11px] font-bold px-3 py-1 rounded-full uppercase tracking-wider`}>
                       {exam.subject}
                     </span>
                     <Calendar className="text-gray-300" size={20} />
                   </div>
                   <h4 className="text-xl font-bold text-slate-900 mb-4 group-hover:text-teal-600 transition-colors">{exam.title}</h4>
                   <div className="flex flex-wrap gap-y-2 gap-x-6 text-sm text-gray-500 mb-8">
-                    <div className="flex items-center gap-2"><Calendar size={16} className="text-teal-500" /> {exam.date}</div>
-                    <div className="flex items-center gap-2"><Clock size={16} className="text-teal-500" /> {exam.time}</div>
-                    <div className="text-gray-400 font-medium">{exam.duration} • {exam.questions} questions</div>
+                    <div className="flex items-center gap-2"><Calendar size={16} className="text-teal-500" /> {new Date(exam.createdAt).toLocaleDateString()}</div>
+                    <div className="flex items-center gap-2"><Clock size={16} className="text-teal-500" /> 20 mins</div>
+                    <div className="text-gray-400 font-medium">{exam.questionsCount || 0} questions • {exam.difficulty}</div>
                   </div>
                   <motion.button
                     whileTap={{ scale: 0.95 }}
+                    onClick={() => navigate(`/test/${exam._id}`)}
                     className="w-full bg-[#0D9488] hover:bg-[#0A756C] text-white font-bold py-4 rounded-xl shadow-lg"
                   >
                     Start Test
@@ -171,11 +206,10 @@ const Dashboard = () => {
 };
 
 const NavItem = ({ icon, label, active = false, isOpen, onClick }) => (
-  <button 
+  <button
     onClick={onClick}
-    className={`flex items-center gap-4 px-4 py-3 rounded-xl w-full transition-all ${
-      active ? 'bg-teal-600 text-white shadow-lg shadow-teal-900/20' : 'text-slate-400 hover:bg-slate-800 hover:text-white'
-    }`}
+    className={`flex items-center gap-4 px-4 py-3 rounded-xl w-full transition-all ${active ? 'bg-teal-600 text-white shadow-lg shadow-teal-900/20' : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+      }`}
   >
     {icon} {isOpen && <span className="font-medium whitespace-nowrap">{label}</span>}
   </button>

@@ -1,0 +1,34 @@
+{
+    "questions": [
+        {
+            "question": "Which of the following is considered the 'King of Medicines' in Siddha?",
+            "options": [
+                "Muppu",
+                "Thanga Parpam",
+                "Poorna Chandrodayam",
+                "Aya Chendooram"
+            ],
+            "answer": 0
+        },
+        {
+            "question": "What is the primary diagnostic method involving the eight entities (Envagai Thervu)?",
+            "options": [
+                "Naadi (Pulse)",
+                "Vizhi (Eyes)",
+                "Mozhi (Speech)",
+                "All of the above"
+            ],
+            "answer": 3
+        },
+        {
+            "question": "Which basic element (Boothams) corresponds to 'Vatham'?",
+            "options": [
+                "Earth + Water",
+                "Fire + Water",
+                "Space + Air",
+                "Air + Fire"
+            ],
+            "answer": 2
+        }
+    ]
+}
