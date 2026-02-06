@@ -23,6 +23,8 @@ const AdminDashboard = () => {
     const [users, setUsers] = useState([]);
     const [questionBanks, setQuestionBanks] = useState([]);
     const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+    const [editingBank, setEditingBank] = useState(null);
+    const [selectedSubject, setSelectedSubject] = useState('All Subjects');
     const navigate = useNavigate();
 
     const fetchAllData = async () => {
@@ -60,7 +62,44 @@ const AdminDashboard = () => {
 
     const handleUploadSuccess = () => {
         setIsUploadModalOpen(false);
-        fetchAllData(); // Refresh list
+        setEditingBank(null);
+        fetchAllData();
+    };
+
+    const handleDelete = async (id) => {
+        if (!window.confirm("Are you sure you want to delete this question bank?")) return;
+        try {
+            const token = localStorage.getItem('token');
+            await axios.delete(`http://localhost:5000/api/admin/question-banks/${id}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            fetchAllData();
+        } catch (err) {
+            console.error("Delete failed", err);
+            const msg = err.response?.data?.message || err.message;
+            alert(`Failed to delete: ${msg}`);
+        }
+    };
+
+    const handleDownload = async (bank) => {
+        try {
+            const token = localStorage.getItem('token');
+            const response = await axios.get(`http://localhost:5000/api/admin/question-banks/${bank._id}/download`, {
+                headers: { Authorization: `Bearer ${token}` },
+                responseType: 'blob'
+            });
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', bank.filename || `${bank.title}.json`);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+        } catch (err) {
+            console.error("Download failed", err);
+            const msg = err.response?.data?.message || err.message;
+            alert(`Failed to download: ${msg}`);
+        }
     };
 
     return (
@@ -138,10 +177,16 @@ const AdminDashboard = () => {
                                 <Upload size={16} /> Upload New
                             </button>
                         )}
-                        <div className="relative group w-48 bg-white border border-slate-200 rounded-lg">
-                            <button className="w-full px-4 py-2 flex items-center justify-between text-sm font-semibold text-gray-700">
-                                All Subjects <ChevronDown size={16} />
-                            </button>
+                        <div className="relative w-48 bg-white border border-slate-200 rounded-lg">
+                            <select
+                                value={selectedSubject}
+                                onChange={(e) => setSelectedSubject(e.target.value)}
+                                className="w-full px-4 py-2 text-sm font-semibold text-gray-700 bg-transparent appearance-none focus:outline-none cursor-pointer"
+                            >
+                                <option>All Subjects</option>
+                                {[...new Set([...(questionBanks || []).map(b => b.subject), 'Noi Naadal', 'Maruthuvam', 'Gunapadam', 'Maathu Vidhai', 'Varma Kalai'])].map(s => <option key={s} value={s}>{s}</option>)}
+                            </select>
+                            <ChevronDown size={16} className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500" />
                         </div>
                     </div>
                 </header>
@@ -206,34 +251,35 @@ const AdminDashboard = () => {
                         </div>
 
                         <div className="space-y-6">
-                            {questionBanks.length > 0 ? questionBanks.map((bank) => (
-                                <div key={bank._id || bank.id} className="bg-white p-6 rounded-xl border border-slate-100 flex justify-between items-center hover:shadow-sm transition-shadow">
-                                    <div>
-                                        <div className="flex items-center gap-3 mb-1">
-                                            <h4 className="text-lg font-bold text-slate-900">{bank.title}</h4>
-                                            <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${bank.difficulty === 'Hard' ? 'bg-red-100 text-red-600' : 'bg-amber-100 text-amber-600'
-                                                }`}>
-                                                {bank.difficulty}
-                                            </span>
+                            {(selectedSubject === 'All Subjects' ? questionBanks : questionBanks.filter(b => b.subject === selectedSubject)).length > 0 ?
+                                (selectedSubject === 'All Subjects' ? questionBanks : questionBanks.filter(b => b.subject === selectedSubject)).map((bank) => (
+                                    <div key={bank._id || bank.id} className="bg-white p-6 rounded-xl border border-slate-100 flex justify-between items-center hover:shadow-sm transition-shadow">
+                                        <div>
+                                            <div className="flex items-center gap-3 mb-1">
+                                                <h4 className="text-lg font-bold text-slate-900">{bank.title}</h4>
+                                                <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${bank.difficulty === 'Hard' ? 'bg-red-100 text-red-600' : 'bg-amber-100 text-amber-600'
+                                                    }`}>
+                                                    {bank.difficulty}
+                                                </span>
+                                            </div>
+                                            <p className="text-sm font-semibold text-teal-600 mb-3">{bank.subject}</p>
+                                            <div className="flex items-center gap-6 text-xs text-slate-500 font-medium">
+                                                <span>{bank.questionsCount || bank.questions} questions</span>
+                                                <span>Uploaded {new Date(bank.createdAt || bank.uploaded).toLocaleDateString()}</span>
+                                                <span>{bank.attempts} students attempted</span>
+                                            </div>
                                         </div>
-                                        <p className="text-sm font-semibold text-teal-600 mb-3">{bank.subject}</p>
-                                        <div className="flex items-center gap-6 text-xs text-slate-500 font-medium">
-                                            <span>{bank.questionsCount || bank.questions} questions</span>
-                                            <span>Uploaded {new Date(bank.createdAt || bank.uploaded).toLocaleDateString()}</span>
-                                            <span>{bank.attempts} students attempted</span>
+                                        <div className="flex items-center gap-3">
+                                            <button onClick={() => handleDownload(bank)} className="p-2 text-slate-400 hover:text-teal-600 transition-colors"><Download size={18} /></button>
+                                            <button onClick={() => setEditingBank(bank)} className="p-2 text-slate-400 hover:text-blue-600 transition-colors"><Edit size={18} /></button>
+                                            <button onClick={() => handleDelete(bank._id)} className="p-2 text-slate-400 hover:text-red-600 transition-colors"><Trash2 size={18} /></button>
                                         </div>
                                     </div>
-                                    <div className="flex items-center gap-3">
-                                        <button className="p-2 text-slate-400 hover:text-teal-600 transition-colors"><Download size={18} /></button>
-                                        <button className="p-2 text-slate-400 hover:text-blue-600 transition-colors"><Edit size={18} /></button>
-                                        <button className="p-2 text-slate-400 hover:text-red-600 transition-colors"><Trash2 size={18} /></button>
+                                )) : (
+                                    <div className="text-center py-10 text-slate-400">
+                                        No question banks found for {selectedSubject}.
                                     </div>
-                                </div>
-                            )) : (
-                                <div className="text-center py-10 text-slate-400">
-                                    No question banks uploaded yet.
-                                </div>
-                            )}
+                                )}
                         </div>
                     </div>
                 )}
@@ -308,6 +354,13 @@ const AdminDashboard = () => {
                     onClose={() => setIsUploadModalOpen(false)}
                     onSuccess={handleUploadSuccess}
                     onAuthError={handleLogout}
+                />
+            )}
+            {editingBank && (
+                <EditModal
+                    bank={editingBank}
+                    onClose={() => setEditingBank(null)}
+                    onSuccess={handleUploadSuccess}
                 />
             )}
         </div>
@@ -526,6 +579,86 @@ const UploadModal = ({ onClose, onSuccess, onAuthError }) => {
                             {loading ? 'Uploading...' : 'Upload Bank'}
                         </button>
                     </div>
+                </form>
+            </div>
+        </div>
+    );
+};
+
+const EditModal = ({ bank, onClose, onSuccess }) => {
+    const [formData, setFormData] = useState({
+        title: bank.title,
+        subject: bank.subject,
+        difficulty: bank.difficulty
+    });
+    const [loading, setLoading] = useState(false);
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setLoading(true);
+        try {
+            const token = localStorage.getItem('token');
+            await axios.put(`http://localhost:5000/api/admin/question-banks/${bank._id}`, formData, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            onSuccess();
+        } catch (err) {
+            console.error("Update failed", err);
+            const msg = err.response?.data?.message || err.message;
+            alert(`Update failed: ${msg}`);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <div className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-4 backdrop-blur-sm">
+            <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl p-6 relative">
+                <button onClick={onClose} className="absolute right-4 top-4 p-1 hover:bg-gray-100 rounded-full"><X size={20} /></button>
+                <h3 className="text-xl font-serif font-bold text-slate-800 mb-6">Edit Question Bank</h3>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    <div>
+                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Title</label>
+                        <input
+                            required
+                            className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#C2410C]/20 text-sm"
+                            value={formData.title}
+                            onChange={e => setFormData({ ...formData, title: e.target.value })}
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Subject</label>
+                        <select
+                            className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#C2410C]/20 text-sm bg-white"
+                            value={formData.subject}
+                            onChange={e => setFormData({ ...formData, subject: e.target.value })}
+                        >
+                            <option>Noi Naadal</option>
+                            <option>Maruthuvam</option>
+                            <option>Gunapadam</option>
+                            <option>Sirappu Maruthuvam</option>
+                            <option>Varma Kalai</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Difficulty</label>
+                        <select
+                            className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#C2410C]/20 text-sm bg-white"
+                            value={formData.difficulty}
+                            onChange={e => setFormData({ ...formData, difficulty: e.target.value })}
+                        >
+                            <option>Easy</option>
+                            <option>Medium</option>
+                            <option>Hard</option>
+                        </select>
+                    </div>
+                    <button
+                        type="submit"
+                        disabled={loading}
+                        className="w-full py-2.5 rounded-lg bg-[#C2410C] hover:bg-[#9a3412] text-white font-bold shadow-lg shadow-orange-900/20 transition-all disabled:opacity-70 mt-4"
+                    >
+                        {loading ? 'Updating...' : 'Save Changes'}
+                    </button>
                 </form>
             </div>
         </div>

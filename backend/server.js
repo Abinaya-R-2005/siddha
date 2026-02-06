@@ -242,6 +242,49 @@ app.post('/api/admin/question-banks', verifyAdmin, upload.single('file'), async 
     } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
+app.delete('/api/admin/question-banks/:id', verifyAdmin, async (req, res) => {
+    try {
+        const bank = await QuestionBank.findById(req.params.id);
+        if (bank && bank.filename) {
+            const filePath = path.join(uploadDir, bank.filename);
+            if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+        }
+        await QuestionBank.findByIdAndDelete(req.params.id);
+        res.json({ message: 'Question bank deleted' });
+    } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
+app.put('/api/admin/question-banks/:id', verifyAdmin, async (req, res) => {
+    try {
+        const { title, subject, difficulty } = req.body;
+        const updated = await QuestionBank.findByIdAndUpdate(
+            req.params.id,
+            { title, subject, difficulty },
+            { new: true }
+        );
+        res.json(updated);
+    } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
+app.get('/api/admin/question-banks/:id/download', verifyAdmin, async (req, res) => {
+    try {
+        const bank = await QuestionBank.findById(req.params.id);
+        if (!bank) return res.status(404).json({ message: 'Not found' });
+
+        if (bank.filename) {
+            const filePath = path.join(uploadDir, bank.filename);
+            if (fs.existsSync(filePath)) {
+                return res.download(filePath, bank.filename);
+            }
+        }
+
+        const jsonData = JSON.stringify({ questions: bank.questions }, null, 2);
+        res.setHeader('Content-Type', 'application/json');
+        res.setHeader('Content-Disposition', `attachment; filename="${bank.title.replace(/[^a-z0-9]/gi, '_')}.json"`);
+        res.send(jsonData);
+    } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
 // 4. Student: Tests & Progress
 app.get('/api/user/tests', verifyToken, async (req, res) => {
     try {
