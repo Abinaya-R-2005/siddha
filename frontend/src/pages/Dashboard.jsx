@@ -12,6 +12,7 @@ const Dashboard = () => {
   const [selectedSubject, setSelectedSubject] = useState('All Subjects');
   const [user, setUser] = useState({ fullName: "Scholar", role: "student" });
   const [exams, setExams] = useState([]);
+  const [subjects, setSubjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
@@ -38,6 +39,13 @@ const Dashboard = () => {
         if (testsRes.ok) {
           const testsData = await testsRes.json();
           setExams(testsData);
+        }
+
+        // Fetch subjects
+        const subRes = await fetch('http://localhost:5000/api/subjects');
+        if (subRes.ok) {
+          const subData = await subRes.json();
+          setSubjects(subData);
         }
 
       } catch (err) {
@@ -172,9 +180,15 @@ const Dashboard = () => {
                 className="appearance-none bg-white border border-gray-200 rounded-lg px-4 py-2 pr-10 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-900/20 cursor-pointer"
               >
                 <option>All Subjects</option>
-                <option>Noi Naadal</option>
-                <option>Maruthuvam</option>
-                <option>Gunapadam</option>
+                {subjects.length > 0 ? subjects.map((s) => (
+                  <option key={s._id || s.name} value={s.name}>{s.name}</option>
+                )) : (
+                  <>
+                    <option>Noi Naadal</option>
+                    <option>Maruthuvam</option>
+                    <option>Gunapadam</option>
+                  </>
+                )}
               </select>
               <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
             </div>

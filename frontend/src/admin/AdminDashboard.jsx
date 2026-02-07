@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
     LayoutDashboard, Users,
     LogOut, Search,
-    TrendingUp, Calendar, FileText, ChevronDown, Trash2, Edit, Download, Upload, X
+    TrendingUp, Calendar, FileText, ChevronDown, Trash2, Edit, Download, Upload, X, Check, Book
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useCallback } from 'react';
@@ -23,10 +23,66 @@ const AdminDashboard = () => {
     const [chartData, setChartData] = useState({ subjectMastery: [], performanceTrend: [] });
     const [users, setUsers] = useState([]);
     const [questionBanks, setQuestionBanks] = useState([]);
+    const [subjects, setSubjects] = useState([]);
     const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
     const [editingBank, setEditingBank] = useState(null);
     const [selectedSubject, setSelectedSubject] = useState('All Subjects');
+    const [newSubject, setNewSubject] = useState('');
+    const [selectedStudent, setSelectedStudent] = useState(null);
+    const [editingSubject, setEditingSubject] = useState(null); // { _id, name }
     const navigate = useNavigate();
+
+    // ... fetchAllData ...
+
+    // ... useEffect ...
+
+    // ... handleLogout ...
+
+    // ... handleUploadSuccess ...
+
+    // ... handleDelete ...
+
+    const handleAddSubject = async () => {
+        if (!newSubject.trim()) return;
+        try {
+            const token = localStorage.getItem('token');
+            await axios.post('http://localhost:5000/api/admin/subjects', { name: newSubject }, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setNewSubject('');
+            fetchAllData();
+        } catch (err) {
+            alert(err.response?.data?.message || 'Failed to add subject');
+        }
+    };
+
+    const handleDeleteSubject = async (id) => {
+        if (!window.confirm("Delete this subject? Associated questions might lose their category.")) return;
+        try {
+            const token = localStorage.getItem('token');
+            await axios.delete(`http://localhost:5000/api/admin/subjects/${id}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            fetchAllData();
+        } catch (err) {
+            alert('Failed to delete subject');
+        }
+    };
+
+    const requestUpdateSubject = async (id, newName) => {
+        if (!newName.trim()) return;
+        try {
+            const token = localStorage.getItem('token');
+            await axios.put(`http://localhost:5000/api/admin/subjects/${id}`, { name: newName }, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setEditingSubject(null);
+            fetchAllData();
+        } catch (err) {
+            alert('Failed to update subject: ' + (err.response?.data?.message || err.message));
+        }
+    };
+
 
     const fetchAllData = useCallback(async () => {
         try {
@@ -42,6 +98,9 @@ const AdminDashboard = () => {
 
             const qbResponse = await axios.get('http://localhost:5000/api/admin/question-banks', config);
             setQuestionBanks(qbResponse.data);
+
+            const subResponse = await axios.get('http://localhost:5000/api/subjects');
+            setSubjects(subResponse.data);
 
         } catch (err) {
             console.log("Using mock data as backend failed or unauthorized", err);
@@ -130,6 +189,12 @@ const AdminDashboard = () => {
                         active={activeTab === 'Students'}
                         onClick={() => setActiveTab('Students')}
                     />
+                    <NavItem
+                        icon={<Book size={20} />}
+                        label="Subjects"
+                        active={activeTab === 'Subjects'}
+                        onClick={() => setActiveTab('Subjects')}
+                    />
                 </nav>
 
                 <div className="p-8">
@@ -185,7 +250,14 @@ const AdminDashboard = () => {
                                 className="w-full px-4 py-2 text-sm font-semibold text-gray-700 bg-transparent appearance-none focus:outline-none cursor-pointer"
                             >
                                 <option>All Subjects</option>
-                                {[...new Set([...(questionBanks || []).map(b => b.subject), 'Noi Naadal', 'Maruthuvam', 'Gunapadam', 'Maathu Vidhai', 'Varma Kalai'])].map(s => <option key={s} value={s}>{s}</option>)}
+                                {subjects.length > 0 ? subjects.map(s => (
+                                    <option key={s._id || s.name} value={s.name}>{s.name}</option>
+                                )) : (
+                                    // Fallback if subjects not loaded yet
+                                    ['Noi Naadal', 'Maruthuvam', 'Gunapadam', 'Sirappu Maruthuvam', 'Varma Kalai'].map(s => (
+                                        <option key={s} value={s}>{s}</option>
+                                    ))
+                                )}
                             </select>
                             <ChevronDown size={16} className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500" />
                         </div>
@@ -331,7 +403,7 @@ const AdminDashboard = () => {
                                                 {user.lastActive ? new Date(user.lastActive).toLocaleDateString() : 'Never'}
                                             </td>
                                             <td className="px-6 py-4 text-right">
-                                                <button className="text-orange-600 font-bold hover:underline text-xs">View Details</button>
+                                                <button onClick={() => setSelectedStudent(user)} className="text-orange-600 font-bold hover:underline text-xs">View Details</button>
                                             </td>
                                         </tr>
                                     ))}
@@ -347,6 +419,67 @@ const AdminDashboard = () => {
                         </div>
                     </div>
                 )}
+                {/* CONTENT: SUBJECTS */}
+                {activeTab === 'Subjects' && (
+                    <div className="bg-white p-8 rounded-2xl border border-slate-100 shadow-sm animate-in fade-in slide-in-from-bottom-4">
+                        <div className="mb-8 flex gap-4 max-w-xl">
+                            <input
+                                type="text"
+                                placeholder="Enter specific subject name (e.g., Varma Kalai)"
+                                value={newSubject}
+                                onChange={(e) => setNewSubject(e.target.value)}
+                                className="flex-1 px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#C2410C]/20"
+                            />
+                            <button
+                                onClick={handleAddSubject}
+                                disabled={!newSubject.trim()}
+                                className="bg-[#C2410C] hover:bg-[#9a3412] text-white px-6 py-3 rounded-xl font-bold transition-all disabled:opacity-50"
+                            >
+                                <Upload size={20} className="inline mr-2" /> Add Subject
+                            </button>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {subjects.map((sub) => (
+                                <div key={sub._id} className="bg-slate-50 p-4 rounded-xl border border-slate-200 flex justify-between items-center group hover:bg-white hover:shadow-md transition-all">
+                                    {editingSubject?._id === sub._id ? (
+                                        <div className="flex flex-1 gap-2">
+                                            <input
+                                                type="text"
+                                                className="flex-1 px-2 py-1 bg-white border border-gray-300 rounded text-sm"
+                                                value={editingSubject.name}
+                                                onChange={(e) => setEditingSubject({ ...editingSubject, name: e.target.value })}
+                                            />
+                                            <button onClick={() => requestUpdateSubject(sub._id, editingSubject.name)} className="text-green-600 hover:bg-green-100 p-1 rounded"><Check size={16} /></button>
+                                            <button onClick={() => setEditingSubject(null)} className="text-red-500 hover:bg-red-100 p-1 rounded"><X size={16} /></button>
+                                        </div>
+                                    ) : (
+                                        <>
+                                            <span className="font-medium text-slate-700">{sub.name}</span>
+                                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <button
+                                                    onClick={() => setEditingSubject(sub)}
+                                                    className="p-2 text-slate-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"
+                                                >
+                                                    <Edit size={16} />
+                                                </button>
+                                                <button
+                                                    onClick={() => handleDeleteSubject(sub._id)}
+                                                    className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                                >
+                                                    <Trash2 size={16} />
+                                                </button>
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                        {subjects.length === 0 && (
+                            <div className="text-center py-12 text-slate-400">No subjects found. Add one to get started.</div>
+                        )}
+                    </div>
+                )}
             </main>
 
             {/* Upload Modal */}
@@ -355,6 +488,7 @@ const AdminDashboard = () => {
                     onClose={() => setIsUploadModalOpen(false)}
                     onSuccess={handleUploadSuccess}
                     onAuthError={handleLogout}
+                    subjects={subjects}
                 />
             )}
             {editingBank && (
@@ -362,6 +496,13 @@ const AdminDashboard = () => {
                     bank={editingBank}
                     onClose={() => setEditingBank(null)}
                     onSuccess={handleUploadSuccess}
+                    subjects={subjects}
+                />
+            )}
+            {selectedStudent && (
+                <StudentDetailsModal
+                    student={selectedStudent}
+                    onClose={() => setSelectedStudent(null)}
                 />
             )}
         </div>
@@ -389,7 +530,7 @@ const OverviewCard = ({ icon, value, label }) => (
     </div>
 );
 
-const UploadModal = ({ onClose, onSuccess, onAuthError }) => {
+const UploadModal = ({ onClose, onSuccess, onAuthError, subjects = [] }) => {
     const [formData, setFormData] = useState({
         title: '',
         subject: 'Noi Naadal',
@@ -531,11 +672,17 @@ const UploadModal = ({ onClose, onSuccess, onAuthError }) => {
                                     value={formData.subject}
                                     onChange={e => setFormData({ ...formData, subject: e.target.value })}
                                 >
-                                    <option>Noi Naadal</option>
-                                    <option>Maruthuvam</option>
-                                    <option>Gunapadam</option>
-                                    <option>Sirappu Maruthuvam</option>
-                                    <option>Varma Kalai</option>
+                                    {subjects.length > 0 ? subjects.map((sub, i) => (
+                                        <option key={i} value={sub.name}>{sub.name}</option>
+                                    )) : (
+                                        <>
+                                            <option>Noi Naadal</option>
+                                            <option>Maruthuvam</option>
+                                            <option>Gunapadam</option>
+                                            <option>Sirappu Maruthuvam</option>
+                                            <option>Varma Kalai</option>
+                                        </>
+                                    )}
                                 </select>
                             </div>
                             <div>
@@ -705,7 +852,7 @@ const UploadModal = ({ onClose, onSuccess, onAuthError }) => {
     );
 };
 
-const EditModal = ({ bank, onClose, onSuccess }) => {
+const EditModal = ({ bank, onClose, onSuccess, subjects = [] }) => {
     const [formData, setFormData] = useState({
         title: bank.title,
         subject: bank.subject,
@@ -860,11 +1007,17 @@ const EditModal = ({ bank, onClose, onSuccess }) => {
                                     value={formData.subject}
                                     onChange={e => setFormData({ ...formData, subject: e.target.value })}
                                 >
-                                    <option>Noi Naadal</option>
-                                    <option>Maruthuvam</option>
-                                    <option>Gunapadam</option>
-                                    <option>Sirappu Maruthuvam</option>
-                                    <option>Varma Kalai</option>
+                                    {subjects.length > 0 ? subjects.map(s => (
+                                        <option key={s._id || s.name} value={s.name}>{s.name}</option>
+                                    )) : (
+                                        <>
+                                            <option>Noi Naadal</option>
+                                            <option>Maruthuvam</option>
+                                            <option>Gunapadam</option>
+                                            <option>Sirappu Maruthuvam</option>
+                                            <option>Varma Kalai</option>
+                                        </>
+                                    )}
                                 </select>
                             </div>
                             <div>
@@ -1032,6 +1185,93 @@ const EditModal = ({ bank, onClose, onSuccess }) => {
                     >
                         {loading ? 'Saving Changes...' : 'Save Changes'}
                     </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+const StudentDetailsModal = ({ student, onClose }) => {
+    if (!student) return null;
+    return (
+        <div className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-4 backdrop-blur-sm">
+            <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl p-6 relative animate-in zoom-in duration-200">
+                <button
+                    onClick={onClose}
+                    className="absolute top-4 right-4 p-2 rounded-full hover:bg-slate-100 transition-colors"
+                >
+                    <X size={20} className="text-slate-500" />
+                </button>
+
+                <div className="text-center mb-6">
+                    <div className="w-20 h-20 bg-slate-100 rounded-full mx-auto mb-4 flex items-center justify-center text-4xl">
+                        🎓
+                    </div>
+                    <h2 className="text-2xl font-serif font-bold text-slate-800">{student.fullName}</h2>
+                    <p className="text-slate-500 font-medium">{student.role || 'Student'}</p>
+                </div>
+
+                <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
+                    <div className="flex justify-between items-center bg-slate-50 p-3 rounded-lg">
+                        <span className="text-sm font-bold text-slate-500">Email</span>
+                        <span className="text-sm font-medium text-slate-900">{student.email}</span>
+                    </div>
+                    {student.regNo && (
+                        <div className="flex justify-between items-center bg-slate-50 p-3 rounded-lg">
+                            <span className="text-sm font-bold text-slate-500">Reg No</span>
+                            <span className="text-sm font-medium text-slate-900">{student.regNo}</span>
+                        </div>
+                    )}
+                    {student.mobile && (
+                        <div className="flex justify-between items-center bg-slate-50 p-3 rounded-lg">
+                            <span className="text-sm font-bold text-slate-500">Mobile</span>
+                            <span className="text-sm font-medium text-slate-900">{student.mobile}</span>
+                        </div>
+                    )}
+                    {student.address && (
+                        <div className="flex flex-col gap-1 bg-slate-50 p-3 rounded-lg">
+                            <span className="text-sm font-bold text-slate-500">Address</span>
+                            <span className="text-sm font-medium text-slate-900">{student.address}</span>
+                        </div>
+                    )}
+                    {student.course && (
+                        <div className="flex justify-between items-center bg-slate-50 p-3 rounded-lg">
+                            <span className="text-sm font-bold text-slate-500">Course</span>
+                            <span className="text-sm font-medium text-slate-900">{student.course}</span>
+                        </div>
+                    )}
+                    {student.year && (
+                        <div className="flex justify-between items-center bg-slate-50 p-3 rounded-lg">
+                            <span className="text-sm font-bold text-slate-500">Year</span>
+                            <span className="text-sm font-medium text-slate-900">{student.year}</span>
+                        </div>
+                    )}
+                    {student.expertise && (
+                        <div className="flex flex-col gap-1 bg-slate-50 p-3 rounded-lg">
+                            <span className="text-sm font-bold text-slate-500">Bio / Expertise</span>
+                            <span className="text-sm font-medium text-slate-900">{student.expertise}</span>
+                        </div>
+                    )}
+                    <div className="flex justify-between items-center bg-slate-50 p-3 rounded-lg">
+                        <span className="text-sm font-bold text-slate-500">Tests Taken</span>
+                        <span className="text-sm font-medium text-slate-900">{student.testsCompleted || 0}</span>
+                    </div>
+                    <div className="flex justify-between items-center bg-slate-50 p-3 rounded-lg">
+                        <span className="text-sm font-bold text-slate-500">Average Score</span>
+                        <span className="text-sm font-medium text-slate-900">{student.averageScore || 0}%</span>
+                    </div>
+                    <div className="flex justify-between items-center bg-slate-50 p-3 rounded-lg">
+                        <span className="text-sm font-bold text-slate-500">Joined On</span>
+                        <span className="text-sm font-medium text-slate-900">
+                            {student.createdAt ? new Date(student.createdAt).toLocaleDateString() : 'N/A'}
+                        </span>
+                    </div>
+                    <div className="flex justify-between items-center bg-slate-50 p-3 rounded-lg">
+                        <span className="text-sm font-bold text-slate-500">Last Active</span>
+                        <span className="text-sm font-medium text-slate-900">
+                            {student.lastActive ? new Date(student.lastActive).toLocaleString() : 'Never'}
+                        </span>
+                    </div>
                 </div>
             </div>
         </div>
