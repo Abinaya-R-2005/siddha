@@ -3,9 +3,10 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     ChevronLeft, ChevronRight, CheckCircle2,
-    Clock, AlertCircle, Loader2, Award, Trophy
+    Clock, AlertCircle, Loader2, Trophy
 } from 'lucide-react';
 import axios from 'axios';
+import { useCallback } from 'react';
 
 const TestPage = () => {
     const { id } = useParams();
@@ -41,27 +42,7 @@ const TestPage = () => {
         fetchTest();
     }, [id, navigate]);
 
-    useEffect(() => {
-        if (!test || result) return;
-        const timer = setInterval(() => {
-            setTimeLeft(prev => {
-                if (prev <= 1) {
-                    clearInterval(timer);
-                    handleSubmit();
-                    return 0;
-                }
-                return prev - 1;
-            });
-        }, 1000);
-        return () => clearInterval(timer);
-    }, [test, result]);
-
-    const handleOptionSelect = (optionIndex) => {
-        if (result) return;
-        setSelectedAnswers({ ...selectedAnswers, [currentQuestion]: optionIndex });
-    };
-
-    const handleSubmit = async () => {
+    const handleSubmit = useCallback(async () => {
         if (submitting) return;
         setSubmitting(true);
         try {
@@ -79,6 +60,26 @@ const TestPage = () => {
         } finally {
             setSubmitting(false);
         }
+    }, [id, submitting, selectedAnswers]);
+
+    useEffect(() => {
+        if (!test || result) return;
+        const timer = setInterval(() => {
+            setTimeLeft(prev => {
+                if (prev <= 1) {
+                    clearInterval(timer);
+                    handleSubmit();
+                    return 0;
+                }
+                return prev - 1;
+            });
+        }, 1000);
+        return () => clearInterval(timer);
+    }, [test, result, handleSubmit]);
+
+    const handleOptionSelect = (optionIndex) => {
+        if (result) return;
+        setSelectedAnswers({ ...selectedAnswers, [currentQuestion]: optionIndex });
     };
 
     const formatTime = (seconds) => {

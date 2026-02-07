@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Save, FileText, Hash, AlertTriangle, Wand2, Check, ChevronRight, Loader2 } from 'lucide-react';
+import { ArrowLeft, Save, FileText, Hash, AlertTriangle, Wand2, Check, Loader2 } from 'lucide-react';
 import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
 import axios from 'axios';
@@ -222,13 +222,13 @@ const CreateTest = () => {
                                                     type="text"
                                                     value={opt}
                                                     onChange={(e) => handleOptionChange(qIdx, oIdx, e.target.value)}
-                                                    className={`w-full pl-10 p-3 rounded-xl border-2 outline-none transition-all ${q.correctAnswer == oIdx ? 'border-[#0F172A] bg-[#0F172A]/5' : 'border-gray-200 focus:border-gray-300'}`}
+                                                    className={`w-full pl-10 p-3 rounded-xl border-2 outline-none transition-all ${q.correctAnswer === oIdx ? 'border-[#0F172A] bg-[#0F172A]/5' : 'border-gray-200 focus:border-gray-300'}`}
                                                     required
                                                 />
                                                 <button
                                                     type="button"
                                                     onClick={() => handleQuestionChange(qIdx, 'correctAnswer', oIdx)}
-                                                    className={`absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full transition-colors ${q.correctAnswer == oIdx ? 'text-[#0F172A]' : 'text-gray-300 hover:text-gray-400'}`}
+                                                    className={`absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full transition-colors ${q.correctAnswer === oIdx ? 'text-[#0F172A]' : 'text-gray-300 hover:text-gray-400'}`}
                                                 >
                                                     <Check size={20} />
                                                 </button>

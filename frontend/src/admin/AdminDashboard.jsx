@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import {
     LayoutDashboard, Users,
     LogOut, Search,
-    TrendingUp, Calendar, FileText, ChevronDown, Trash2, Edit, Download, Upload, X, Check
+    TrendingUp, Calendar, FileText, ChevronDown, Trash2, Edit, Download, Upload, X
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useCallback } from 'react';
 import axios from 'axios';
 import {
     BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
@@ -27,7 +28,7 @@ const AdminDashboard = () => {
     const [selectedSubject, setSelectedSubject] = useState('All Subjects');
     const navigate = useNavigate();
 
-    const fetchAllData = async () => {
+    const fetchAllData = useCallback(async () => {
         try {
             const token = localStorage.getItem('token');
             const config = { headers: { Authorization: `Bearer ${token}` } };
@@ -49,11 +50,11 @@ const AdminDashboard = () => {
                 navigate('/login');
             }
         }
-    };
+    }, [navigate]);
 
     useEffect(() => {
         fetchAllData();
-    }, []);
+    }, [fetchAllData]);
 
     const handleLogout = () => {
         localStorage.removeItem('token');
