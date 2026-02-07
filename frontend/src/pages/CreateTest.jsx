@@ -82,6 +82,7 @@ const CreateTest = () => {
                 title: `${formData.topic} Assessment`,
                 subject: formData.topic,
                 difficulty: 'Medium',
+                negativeMarking: formData.negativeMarking,
                 questionsCount: questions.length,
                 manualQuestions: JSON.stringify(questions.map(q => ({
                     question: q.question,

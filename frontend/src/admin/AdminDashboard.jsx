@@ -394,35 +394,92 @@ const UploadModal = ({ onClose, onSuccess, onAuthError }) => {
         title: '',
         subject: 'Noi Naadal',
         difficulty: 'Easy',
-        files: [],
-        manualCount: 10,
-        manualAnswers: new Array(10).fill(0)
+        negativeMarking: false,
+        startTime: '',
+        endTime: ''
     });
+    const [questions, setQuestions] = useState([
+        { question: '', options: ['', '', '', ''], answer: 0, file: null, preview: null }
+    ]);
     const [loading, setLoading] = useState(false);
+
+    const handleAddQuestion = () => {
+        setQuestions([...questions, { question: '', options: ['', '', '', ''], answer: 0, file: null, preview: null }]);
+    };
+
+    const handleRemoveQuestion = (index) => {
+        const updatedQuestions = questions.filter((_, i) => i !== index);
+        setQuestions(updatedQuestions);
+    };
+
+    const handleQuestionChange = (index, field, value) => {
+        const updatedQuestions = [...questions];
+        if (field === 'options') {
+            const { optIdx, val } = value;
+            updatedQuestions[index].options[optIdx] = val;
+        } else {
+            updatedQuestions[index][field] = value;
+        }
+        setQuestions(updatedQuestions);
+    };
+
+    const handleFileChange = (index, file) => {
+        const updatedQuestions = [...questions];
+        updatedQuestions[index].file = file;
+        updatedQuestions[index].preview = URL.createObjectURL(file);
+        setQuestions(updatedQuestions);
+    };
+
+    const handleBulkImageUpload = (e) => {
+        const files = Array.from(e.target.files);
+        const newQuestions = files.map((file, idx) => ({
+            question: `Question ${questions.length + idx + 1}`,
+            options: ['Option A', 'Option B', 'Option C', 'Option D'],
+            answer: 0,
+            file: file,
+            preview: URL.createObjectURL(file)
+        }));
+        // If there's only one empty question, replace it. Otherwise append.
+        if (questions.length === 1 && !questions[0].question && !questions[0].file) {
+            setQuestions(newQuestions);
+        } else {
+            setQuestions([...questions, ...newQuestions]);
+        }
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!formData.files || formData.files.length === 0) return alert('Please select at least one file');
+        if (questions.length === 0) return alert('Please add at least one question');
 
         setLoading(true);
         const data = new FormData();
         data.append('title', formData.title);
         data.append('subject', formData.subject);
         data.append('difficulty', formData.difficulty);
+        data.append('negativeMarking', formData.negativeMarking);
+        data.append('startTime', formData.startTime);
+        data.append('endTime', formData.endTime);
 
-        // Append all files
-        formData.files.forEach(file => {
-            data.append('files', file);
+        // Prepare questions for backend
+        // We need to keep track of which file belongs to which question
+        // Backend expects 'files' array and 'manualQuestions' JSON
+        // We'll send files in order of questions that have files
+        const filesToSend = [];
+        const questionsToSave = questions.map((q) => {
+            const qCopy = { ...q };
+            if (qCopy.file) {
+                filesToSend.push(qCopy.file);
+                qCopy.hasNewFile = true;
+                // We don't send the file object in the JSON
+                delete qCopy.file;
+                delete qCopy.preview;
+            }
+            return qCopy;
         });
 
-        // Append manual questions structure for images
-        const generatedQuestions = formData.manualAnswers.map((ans, idx) => ({
-            question: `Question ${idx + 1}`,
-            options: ["Option A", "Option B", "Option C", "Option D"],
-            answer: ans
-        }));
-        data.append('manualQuestions', JSON.stringify(generatedQuestions));
-        data.append('questionsCount', formData.manualCount);
+        data.append('manualQuestions', JSON.stringify(questionsToSave));
+        data.append('questionsCount', questionsToSave.length);
+        filesToSend.forEach(file => data.append('files', file));
 
         try {
             const token = localStorage.getItem('token');
@@ -447,135 +504,202 @@ const UploadModal = ({ onClose, onSuccess, onAuthError }) => {
 
     return (
         <div className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-4 backdrop-blur-sm">
-            <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+            <div className="bg-white rounded-2xl w-full max-w-4xl max-h-[90vh] shadow-2xl overflow-hidden flex flex-col animate-in fade-in zoom-in duration-200">
                 <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
-                    <h3 className="text-xl font-serif font-bold text-slate-800">Upload Question Bank</h3>
+                    <h3 className="text-xl font-serif font-bold text-slate-800">Create Question Bank</h3>
                     <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded-full transition-colors"><X size={20} className="text-gray-500" /></button>
                 </div>
 
-                <form onSubmit={handleSubmit} className="p-6 space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Title</label>
-                            <input
-                                required
-                                type="text"
-                                className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#C2410C]/20 text-sm"
-                                placeholder="e.g., Annual Exam"
-                                value={formData.title}
-                                onChange={e => setFormData({ ...formData, title: e.target.value })}
-                            />
+                <div className="flex-1 overflow-y-auto p-6">
+                    <form id="upload-form" onSubmit={handleSubmit} className="space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                            <div className="md:col-span-2">
+                                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Title</label>
+                                <input
+                                    required
+                                    type="text"
+                                    className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#C2410C]/20 text-sm"
+                                    placeholder="e.g., Annual Exam"
+                                    value={formData.title}
+                                    onChange={e => setFormData({ ...formData, title: e.target.value })}
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Subject</label>
+                                <select
+                                    className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#C2410C]/20 text-sm bg-white"
+                                    value={formData.subject}
+                                    onChange={e => setFormData({ ...formData, subject: e.target.value })}
+                                >
+                                    <option>Noi Naadal</option>
+                                    <option>Maruthuvam</option>
+                                    <option>Gunapadam</option>
+                                    <option>Sirappu Maruthuvam</option>
+                                    <option>Varma Kalai</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Difficulty</label>
+                                <select
+                                    className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#C2410C]/20 text-sm bg-white"
+                                    value={formData.difficulty}
+                                    onChange={e => setFormData({ ...formData, difficulty: e.target.value })}
+                                >
+                                    <option>Easy</option>
+                                    <option>Medium</option>
+                                    <option>Hard</option>
+                                </select>
+                            </div>
+                            <div className="md:col-span-2">
+                                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Start Time (Leave empty for immediate)</label>
+                                <input
+                                    type="datetime-local"
+                                    className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#C2410C]/20 text-sm"
+                                    value={formData.startTime}
+                                    onChange={e => setFormData({ ...formData, startTime: e.target.value })}
+                                />
+                            </div>
+                            <div className="md:col-span-2">
+                                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">End Time</label>
+                                <input
+                                    type="datetime-local"
+                                    className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#C2410C]/20 text-sm"
+                                    value={formData.endTime}
+                                    onChange={e => setFormData({ ...formData, endTime: e.target.value })}
+                                />
+                            </div>
                         </div>
-                        <div>
-                            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Subject</label>
-                            <select
-                                className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#C2410C]/20 text-sm bg-white"
-                                value={formData.subject}
-                                onChange={e => setFormData({ ...formData, subject: e.target.value })}
-                            >
-                                <option>Noi Naadal</option>
-                                <option>Maruthuvam</option>
-                                <option>Gunapadam</option>
-                                <option>Sirappu Maruthuvam</option>
-                                <option>Varma Kalai</option>
-                            </select>
-                        </div>
-                    </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Difficulty</label>
-                            <select
-                                className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#C2410C]/20 text-sm bg-white"
-                                value={formData.difficulty}
-                                onChange={e => setFormData({ ...formData, difficulty: e.target.value })}
-                            >
-                                <option>Easy</option>
-                                <option>Medium</option>
-                                <option>Hard</option>
-                            </select>
+                        <div className="flex items-center justify-between p-4 bg-orange-50 rounded-xl border border-orange-100">
+                            <div>
+                                <h4 className="text-sm font-bold text-slate-800">Negative Marking</h4>
+                                <p className="text-xs text-slate-500">Enable to deduct -0.25 marks for each incorrect answer.</p>
+                            </div>
+                            <label className="relative inline-flex items-center cursor-pointer">
+                                <input
+                                    type="checkbox"
+                                    checked={formData.negativeMarking}
+                                    onChange={e => setFormData({ ...formData, negativeMarking: e.target.checked })}
+                                    className="sr-only peer"
+                                />
+                                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#C2410C]"></div>
+                            </label>
                         </div>
-                        <div>
-                            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Upload Question Paper (Images Only)</label>
-                            <input
-                                required
-                                type="file"
-                                multiple
-                                accept="image/png, image/jpeg, image/jpg"
-                                className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-[#C2410C]/10 file:text-[#C2410C] hover:file:bg-[#C2410C]/20"
-                                onChange={e => {
-                                    const files = Array.from(e.target.files);
-                                    setFormData({
-                                        ...formData,
-                                        files: files,
-                                        manualCount: files.length,
-                                        manualAnswers: new Array(files.length).fill(0)
-                                    });
-                                }}
-                            />
-                        </div>
-                    </div>
 
-                    {/* Answer Key Generator for Images */}
-                    {formData.files && formData.files.length > 0 && (
-                        <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 animate-in slide-in-from-top-2">
-                            <div className="flex justify-between items-center mb-4">
-                                <h4 className="font-bold text-slate-700 text-sm">Answer Key Setup (1 Question per Image)</h4>
-                                <div className="flex items-center gap-2">
-                                    <label className="text-xs font-semibold text-slate-500">Total Questions:</label>
-                                    <input
-                                        disabled
-                                        type="number"
-                                        className="w-16 px-2 py-1 rounded border border-gray-300 text-center text-sm font-bold bg-gray-100 text-slate-500 cursor-not-allowed"
-                                        value={formData.manualCount}
-                                    />
+                        <div className="space-y-4">
+                            <div className="flex justify-between items-center">
+                                <h4 className="font-bold text-slate-800 uppercase tracking-widest text-xs">Questions ({questions.length})</h4>
+                                <div className="flex gap-2">
+                                    <label className="cursor-pointer bg-[#C2410C]/10 text-[#C2410C] px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-[#C2410C]/20 transition-colors flex items-center gap-2">
+                                        <Upload size={14} /> Bulk Image Upload
+                                        <input type="file" multiple accept="image/*" className="hidden" onChange={handleBulkImageUpload} />
+                                    </label>
+                                    <button
+                                        type="button"
+                                        onClick={handleAddQuestion}
+                                        className="bg-slate-800 text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-slate-900 transition-colors flex items-center gap-2"
+                                    >
+                                        + Add Question
+                                    </button>
                                 </div>
                             </div>
 
-                            <div className="max-h-48 overflow-y-auto pr-2 grid grid-cols-5 gap-2">
-                                {Array.from({ length: formData.manualCount }).map((_, qIdx) => (
-                                    <div key={qIdx} className="flex flex-col items-center gap-1 bg-white p-2 rounded border border-slate-200">
-                                        <span className="text-[10px] font-bold text-slate-400">Q{qIdx + 1}</span>
-                                        <select
-                                            className="w-full text-xs font-bold text-slate-700 border-none bg-transparent focus:ring-0 cursor-pointer text-center"
-                                            value={formData.manualAnswers?.[qIdx] || 0}
-                                            onChange={(e) => {
-                                                const newAnswers = [...(formData.manualAnswers || [])];
-                                                newAnswers[qIdx] = parseInt(e.target.value);
-                                                setFormData({ ...formData, manualAnswers: newAnswers });
-                                            }}
+                            <div className="space-y-4">
+                                {questions.map((q, qIdx) => (
+                                    <div key={qIdx} className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm relative group animate-in slide-in-from-top-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => handleRemoveQuestion(qIdx)}
+                                            className="absolute -right-2 -top-2 bg-white border border-slate-200 p-1.5 rounded-full text-slate-400 hover:text-red-500 shadow-sm opacity-0 group-hover:opacity-100 transition-all"
                                         >
-                                            <option value={0}>A</option>
-                                            <option value={1}>B</option>
-                                            <option value={2}>C</option>
-                                            <option value={3}>D</option>
-                                        </select>
+                                            <Trash2 size={14} />
+                                        </button>
+
+                                        <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+                                            {/* Left: Image Upload/Preview */}
+                                            <div className="md:col-span-3 flex flex-col gap-2">
+                                                <label className="text-[10px] font-bold text-slate-400 uppercase">Question Image</label>
+                                                {q.preview ? (
+                                                    <div className="relative aspect-square rounded-lg overflow-hidden border border-slate-200 group/image">
+                                                        <img src={q.preview} alt="Preview" className="w-full h-full object-cover" />
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handleFileChange(qIdx, null)}
+                                                            className="absolute inset-0 bg-black/40 text-white opacity-0 group-hover/image:opacity-100 flex items-center justify-center transition-opacity text-xs font-bold"
+                                                        >
+                                                            Change Image
+                                                        </button>
+                                                    </div>
+                                                ) : (
+                                                    <label className="aspect-square rounded-lg border-2 border-dashed border-slate-200 flex flex-col items-center justify-center gap-2 cursor-pointer hover:border-[#C2410C]/30 hover:bg-[#C2410C]/5 transition-all">
+                                                        <Upload size={20} className="text-slate-300" />
+                                                        <span className="text-[10px] font-bold text-slate-400">Upload Image</span>
+                                                        <input type="file" accept="image/*" className="hidden" onChange={e => handleFileChange(qIdx, e.target.files[0])} />
+                                                    </label>
+                                                )}
+                                            </div>
+
+                                            {/* Right: Text Content */}
+                                            <div className="md:col-span-9 space-y-4">
+                                                <div>
+                                                    <label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Question Text</label>
+                                                    <textarea
+                                                        className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#C2410C]/20 text-sm h-20 resize-none font-medium"
+                                                        placeholder={`Question ${qIdx + 1} content...`}
+                                                        value={q.question}
+                                                        onChange={e => handleQuestionChange(qIdx, 'question', e.target.value)}
+                                                    />
+                                                </div>
+
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                                    {q.options.map((opt, oIdx) => (
+                                                        <div key={oIdx} className="flex items-center gap-2">
+                                                            <div className={`w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-bold ${q.answer === oIdx ? 'bg-[#C2410C] text-white' : 'bg-slate-100 text-slate-400'}`}>
+                                                                {String.fromCharCode(65 + oIdx)}
+                                                            </div>
+                                                            <input
+                                                                type="text"
+                                                                className="flex-1 px-3 py-1.5 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#C2410C]/20 text-sm"
+                                                                placeholder={`Option ${String.fromCharCode(65 + oIdx)}`}
+                                                                value={opt}
+                                                                onChange={e => handleQuestionChange(qIdx, 'options', { optIdx: oIdx, val: e.target.value })}
+                                                            />
+                                                            <input
+                                                                type="radio"
+                                                                name={`answer-${qIdx}`}
+                                                                checked={q.answer === oIdx}
+                                                                onChange={() => handleQuestionChange(qIdx, 'answer', oIdx)}
+                                                                className="w-4 h-4 accent-[#C2410C] cursor-pointer"
+                                                            />
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                 ))}
                             </div>
-                            <p className="text-[10px] text-slate-400 mt-2 text-center">
-                                Select the correct option for each question corresponding to the uploaded images.
-                            </p>
                         </div>
-                    )}
+                    </form>
+                </div>
 
-                    <div className="flex gap-3 pt-2">
-                        <button
-                            type="button"
-                            onClick={onClose}
-                            className="flex-1 py-2.5 rounded-lg border border-gray-200 font-semibold text-gray-600 hover:bg-gray-50 transition-colors"
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            type="submit"
-                            disabled={loading}
-                            className="flex-1 py-2.5 rounded-lg bg-[#C2410C] hover:bg-[#9a3412] text-white font-bold shadow-lg shadow-orange-900/20 transition-all disabled:opacity-70"
-                        >
-                            {loading ? 'Uploading...' : 'Upload Bank'}
-                        </button>
-                    </div>
-                </form>
+                <div className="p-6 border-t border-gray-100 bg-gray-50 flex gap-4">
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className="flex-1 py-3 rounded-xl border border-gray-200 font-bold text-slate-600 hover:bg-gray-100 transition-colors"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        form="upload-form"
+                        type="submit"
+                        disabled={loading}
+                        className="flex-1 py-3 rounded-xl bg-[#C2410C] hover:bg-[#9a3412] text-white font-bold shadow-lg shadow-orange-900/20 transition-all disabled:opacity-70"
+                    >
+                        {loading ? 'Creating...' : 'Create Question Bank'}
+                    </button>
+                </div>
             </div>
         </div>
     );
@@ -585,22 +709,64 @@ const EditModal = ({ bank, onClose, onSuccess }) => {
     const [formData, setFormData] = useState({
         title: bank.title,
         subject: bank.subject,
-        difficulty: bank.difficulty
+        difficulty: bank.difficulty,
+        negativeMarking: bank.negativeMarking || false,
+        startTime: bank.startTime ? new Date(bank.startTime).toISOString().slice(0, 16) : '',
+        endTime: bank.endTime ? new Date(bank.endTime).toISOString().slice(0, 16) : ''
     });
 
-    // Initialize existing state
-    // Handle legacy single-file banks vs new multi-file banks
-    const initialFilenames = bank.filenames && bank.filenames.length > 0
-        ? bank.filenames
-        : (bank.filename ? [bank.filename] : []);
-
-    const [existingFilenames, setExistingFilenames] = useState(initialFilenames);
-    const [existingQuestions, setExistingQuestions] = useState(bank.questions || []);
-
-    const [newFiles, setNewFiles] = useState([]);
-    const [newManualCount, setNewManualCount] = useState(0);
-    const [newManualAnswers, setNewManualAnswers] = useState([]);
+    const [questions, setQuestions] = useState(
+        (bank.questions || []).map((q, idx) => ({
+            ...q,
+            filename: bank.filenames?.[idx] || (idx === 0 ? bank.filename : null),
+            file: null,
+            preview: null
+        }))
+    );
     const [loading, setLoading] = useState(false);
+
+    const handleAddQuestion = () => {
+        setQuestions([...questions, { question: '', options: ['', '', '', ''], answer: 0, file: null, preview: null }]);
+    };
+
+    const handleRemoveQuestion = (index) => {
+        if (window.confirm('Are you sure you want to remove this question?')) {
+            const updatedQuestions = questions.filter((_, i) => i !== index);
+            setQuestions(updatedQuestions);
+        }
+    };
+
+    const handleQuestionChange = (index, field, value) => {
+        const updatedQuestions = [...questions];
+        if (field === 'options') {
+            const { optIdx, val } = value;
+            updatedQuestions[index].options[optIdx] = val;
+        } else {
+            updatedQuestions[index][field] = value;
+        }
+        setQuestions(updatedQuestions);
+    };
+
+    const handleFileChange = (index, file) => {
+        const updatedQuestions = [...questions];
+        updatedQuestions[index].file = file;
+        updatedQuestions[index].preview = file ? URL.createObjectURL(file) : null;
+        // If we change the file, clear the old filename
+        if (file) updatedQuestions[index].filename = null;
+        setQuestions(updatedQuestions);
+    };
+
+    const handleBulkImageUpload = (e) => {
+        const files = Array.from(e.target.files);
+        const newQuestions = files.map((file, idx) => ({
+            question: `Question ${questions.length + idx + 1}`,
+            options: ['Option A', 'Option B', 'Option C', 'Option D'],
+            answer: 0,
+            file: file,
+            preview: URL.createObjectURL(file)
+        }));
+        setQuestions([...questions, ...newQuestions]);
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -610,26 +776,44 @@ const EditModal = ({ bank, onClose, onSuccess }) => {
         data.append('title', formData.title);
         data.append('subject', formData.subject);
         data.append('difficulty', formData.difficulty);
+        data.append('negativeMarking', formData.negativeMarking);
+        data.append('startTime', formData.startTime);
+        data.append('endTime', formData.endTime);
 
-        // Send backend the state of currently KEPT files/questions
-        // The backend will compare this with DB and delete missing ones
+        // Map through questions to determine what to send
+        const filesToSend = [];
+        const questionsToSave = questions.map((q) => {
+            const qCopy = { ...q };
+            if (qCopy.file) {
+                filesToSend.push(qCopy.file);
+            }
+            // Backend needs to know if a question uses an existing file or a new one
+            // We'll clean up the object for JSON
+            const result = {
+                question: qCopy.question,
+                options: qCopy.options,
+                answer: qCopy.answer,
+                _id: qCopy._id // Keep ID for existing ones
+            };
+            if (qCopy.filename) result.filename = qCopy.filename;
+            if (qCopy.file) result.hasNewFile = true;
+
+            return result;
+        });
+
+        // Backend currently expects filenames in 'updatedFilenames' and questions in 'updatedQuestions'
+        // For NEW files, it expects 'manualQuestions'.
+        // Let's simplify and just send the whole thing as 'detailedQuestions'
+        // But to keep backend compatible with existing logic, we'll try to map it.
+
+        // Actually, let's update the backend to handle a more modern 'detailedQuestions' structure
+        // Or we map here.
+
+        const existingFilenames = questionsToSave.filter(q => q.filename).map(q => q.filename);
         data.append('updatedFilenames', JSON.stringify(existingFilenames));
-        data.append('updatedQuestions', JSON.stringify(existingQuestions));
+        data.append('updatedQuestions', JSON.stringify(questionsToSave));
 
-        if (newFiles.length > 0) {
-            newFiles.forEach(file => {
-                data.append('files', file);
-            });
-
-            // Generate questions for NEW files starting from the correct index
-            const startIdx = existingQuestions.length;
-            const generatedQuestions = newManualAnswers.map((ans, idx) => ({
-                question: `Question ${startIdx + idx + 1}`,
-                options: ["Option A", "Option B", "Option C", "Option D"],
-                answer: ans
-            }));
-            data.append('manualQuestions', JSON.stringify(generatedQuestions));
-        }
+        filesToSend.forEach(file => data.append('files', file));
 
         try {
             const token = localStorage.getItem('token');
@@ -642,165 +826,213 @@ const EditModal = ({ bank, onClose, onSuccess }) => {
             onSuccess();
         } catch (err) {
             console.error("Update failed", err);
-            const msg = err.response?.data?.message || err.message;
-            alert(`Update failed: ${msg}`);
+            alert(`Update failed: ${err.response?.data?.message || err.message}`);
         } finally {
             setLoading(false);
         }
     };
 
-    const handleDeleteExisting = (index) => {
-        if (window.confirm('Are you sure you want to delete this question?')) {
-            const upFilenames = existingFilenames.filter((_, i) => i !== index);
-            const upQuestions = existingQuestions.filter((_, i) => i !== index);
-            setExistingFilenames(upFilenames);
-            setExistingQuestions(upQuestions);
-        }
-    };
-
-    const handleUpdateExistingAnswer = (index, newAnswer) => {
-        const upQuestions = [...existingQuestions];
-        upQuestions[index] = { ...upQuestions[index], answer: parseInt(newAnswer) };
-        setExistingQuestions(upQuestions);
-    };
-
     return (
         <div className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-4 backdrop-blur-sm">
-            <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl p-6 relative max-h-[90vh] overflow-y-auto">
-                <button onClick={onClose} className="absolute right-4 top-4 p-1 hover:bg-gray-100 rounded-full"><X size={20} /></button>
-                <h3 className="text-xl font-serif font-bold text-slate-800 mb-6">Edit Question Bank</h3>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    <div>
-                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Title</label>
-                        <input
-                            required
-                            className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#C2410C]/20 text-sm"
-                            value={formData.title}
-                            onChange={e => setFormData({ ...formData, title: e.target.value })}
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Subject</label>
-                        <select
-                            className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#C2410C]/20 text-sm bg-white"
-                            value={formData.subject}
-                            onChange={e => setFormData({ ...formData, subject: e.target.value })}
-                        >
-                            <option>Noi Naadal</option>
-                            <option>Maruthuvam</option>
-                            <option>Gunapadam</option>
-                            <option>Sirappu Maruthuvam</option>
-                            <option>Varma Kalai</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Difficulty</label>
-                        <select
-                            className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#C2410C]/20 text-sm bg-white"
-                            value={formData.difficulty}
-                            onChange={e => setFormData({ ...formData, difficulty: e.target.value })}
-                        >
-                            <option>Easy</option>
-                            <option>Medium</option>
-                            <option>Hard</option>
-                        </select>
-                    </div>
+            <div className="bg-white rounded-2xl w-full max-w-4xl max-h-[90vh] shadow-2xl overflow-hidden flex flex-col animate-in fade-in zoom-in duration-200">
+                <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+                    <h3 className="text-xl font-serif font-bold text-slate-800">Edit Question Bank</h3>
+                    <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded-full transition-colors"><X size={20} className="text-gray-500" /></button>
+                </div>
 
-                    <div className="pt-4 border-t border-slate-100">
-                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Existing Questions ({existingQuestions.length})</label>
-                        <div className="max-h-48 overflow-y-auto pr-2 space-y-2">
-                            {existingQuestions.map((q, idx) => (
-                                <div key={idx} className="flex items-center justify-between bg-slate-50 p-2 rounded-lg border border-slate-200">
-                                    <div className="flex items-center gap-3">
-                                        <span className="text-xs font-bold text-slate-400 w-6">Q{idx + 1}</span>
-                                        <div className="flex flex-col">
-                                            <span className="text-[10px] text-slate-500 truncate max-w-[120px]" title={existingFilenames[idx]}>
-                                                {existingFilenames[idx]}
-                                            </span>
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <select
-                                            className="text-xs font-bold text-slate-700 bg-white border border-slate-200 rounded px-1 py-1 cursor-pointer focus:outline-none focus:border-[#C2410C]"
-                                            value={q.answer}
-                                            onChange={(e) => handleUpdateExistingAnswer(idx, e.target.value)}
-                                        >
-                                            <option value={0}>A</option>
-                                            <option value={1}>B</option>
-                                            <option value={2}>C</option>
-                                            <option value={3}>D</option>
-                                        </select>
+                <div className="flex-1 overflow-y-auto p-6">
+                    <form id="edit-form" onSubmit={handleSubmit} className="space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                            <div className="md:col-span-2">
+                                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Title</label>
+                                <input
+                                    required
+                                    type="text"
+                                    className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#C2410C]/20 text-sm"
+                                    value={formData.title}
+                                    onChange={e => setFormData({ ...formData, title: e.target.value })}
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Subject</label>
+                                <select
+                                    className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#C2410C]/20 text-sm bg-white"
+                                    value={formData.subject}
+                                    onChange={e => setFormData({ ...formData, subject: e.target.value })}
+                                >
+                                    <option>Noi Naadal</option>
+                                    <option>Maruthuvam</option>
+                                    <option>Gunapadam</option>
+                                    <option>Sirappu Maruthuvam</option>
+                                    <option>Varma Kalai</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Difficulty</label>
+                                <select
+                                    className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#C2410C]/20 text-sm bg-white"
+                                    value={formData.difficulty}
+                                    onChange={e => setFormData({ ...formData, difficulty: e.target.value })}
+                                >
+                                    <option>Easy</option>
+                                    <option>Medium</option>
+                                    <option>Hard</option>
+                                </select>
+                            </div>
+                            <div className="md:col-span-2">
+                                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Start Time</label>
+                                <input
+                                    type="datetime-local"
+                                    className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#C2410C]/20 text-sm"
+                                    value={formData.startTime}
+                                    onChange={e => setFormData({ ...formData, startTime: e.target.value })}
+                                />
+                            </div>
+                            <div className="md:col-span-2">
+                                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">End Time</label>
+                                <input
+                                    type="datetime-local"
+                                    className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#C2410C]/20 text-sm"
+                                    value={formData.endTime}
+                                    onChange={e => setFormData({ ...formData, endTime: e.target.value })}
+                                />
+                            </div>
+                        </div>
+
+                        <div className="flex items-center justify-between p-4 bg-orange-50 rounded-xl border border-orange-100">
+                            <div>
+                                <h4 className="text-sm font-bold text-slate-800">Negative Marking</h4>
+                                <p className="text-xs text-slate-500">Enable to deduct -0.25 marks for each incorrect answer.</p>
+                            </div>
+                            <label className="relative inline-flex items-center cursor-pointer">
+                                <input
+                                    type="checkbox"
+                                    checked={formData.negativeMarking}
+                                    onChange={e => setFormData({ ...formData, negativeMarking: e.target.checked })}
+                                    className="sr-only peer"
+                                />
+                                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#C2410C]"></div>
+                            </label>
+                        </div>
+
+                        <div className="space-y-4">
+                            <div className="flex justify-between items-center">
+                                <h4 className="font-bold text-slate-800 uppercase tracking-widest text-xs">Questions ({questions.length})</h4>
+                                <div className="flex gap-2">
+                                    <label className="cursor-pointer bg-[#C2410C]/10 text-[#C2410C] px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-[#C2410C]/20 transition-colors flex items-center gap-2">
+                                        <Upload size={14} /> Add Images
+                                        <input type="file" multiple accept="image/*" className="hidden" onChange={handleBulkImageUpload} />
+                                    </label>
+                                    <button
+                                        type="button"
+                                        onClick={handleAddQuestion}
+                                        className="bg-slate-800 text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-slate-900 transition-colors flex items-center gap-2"
+                                    >
+                                        + Add Manual Question
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="space-y-4">
+                                {questions.map((q, qIdx) => (
+                                    <div key={qIdx} className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm relative group animate-in slide-in-from-top-2">
                                         <button
                                             type="button"
-                                            onClick={() => handleDeleteExisting(idx)}
-                                            className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors"
+                                            onClick={() => handleRemoveQuestion(qIdx)}
+                                            className="absolute -right-2 -top-2 bg-white border border-slate-200 p-1.5 rounded-full text-slate-400 hover:text-red-500 shadow-sm opacity-0 group-hover:opacity-100 transition-all"
                                         >
                                             <Trash2 size={14} />
                                         </button>
-                                    </div>
-                                </div>
-                            ))}
-                            {existingQuestions.length === 0 && (
-                                <p className="text-xs text-slate-400 text-center py-2">No questions remaining.</p>
-                            )}
-                        </div>
-                    </div>
 
-                    <div className="pt-4 border-t border-slate-100">
-                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Add More Questions (Images)</label>
-                        <input
-                            type="file"
-                            multiple
-                            accept="image/png, image/jpeg, image/jpg"
-                            className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-[#C2410C]/10 file:text-[#C2410C] hover:file:bg-[#C2410C]/20"
-                            onChange={e => {
-                                const files = Array.from(e.target.files);
-                                setNewFiles(files);
-                                setNewManualCount(files.length);
-                                setNewManualAnswers(new Array(files.length).fill(0));
-                            }}
-                        />
-                    </div>
+                                        <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+                                            {/* Left: Image/Preview */}
+                                            <div className="md:col-span-3 flex flex-col gap-2">
+                                                <label className="text-[10px] font-bold text-slate-400 uppercase">Question Image</label>
+                                                {q.file || q.filename ? (
+                                                    <div className="relative aspect-square rounded-lg overflow-hidden border border-slate-200 group/image">
+                                                        <img
+                                                            src={q.preview || `http://localhost:5000/uploads/${q.filename}`}
+                                                            alt="Question content"
+                                                            className="w-full h-full object-cover"
+                                                        />
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handleFileChange(qIdx, null)}
+                                                            className="absolute inset-0 bg-black/40 text-white opacity-0 group-hover/image:opacity-100 flex items-center justify-center transition-opacity text-xs font-bold"
+                                                        >
+                                                            {q.filename ? 'Remove Image' : 'Change Image'}
+                                                        </button>
+                                                    </div>
+                                                ) : (
+                                                    <label className="aspect-square rounded-lg border-2 border-dashed border-slate-200 flex flex-col items-center justify-center gap-2 cursor-pointer hover:border-[#C2410C]/30 hover:bg-[#C2410C]/5 transition-all">
+                                                        <Upload size={20} className="text-slate-300" />
+                                                        <span className="text-[10px] font-bold text-slate-400">Upload Image</span>
+                                                        <input type="file" accept="image/*" className="hidden" onChange={e => handleFileChange(qIdx, e.target.files[0])} />
+                                                    </label>
+                                                )}
+                                            </div>
 
-                    {newFiles.length > 0 && (
-                        <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 animate-in slide-in-from-top-2">
-                            <div className="flex justify-between items-center mb-4">
-                                <h4 className="font-bold text-slate-700 text-sm">Answer Key for New Images</h4>
-                                <span className="text-xs font-bold text-slate-400">{newFiles.length} New Questions</span>
-                            </div>
+                                            {/* Right: Text Content */}
+                                            <div className="md:col-span-9 space-y-4">
+                                                <div>
+                                                    <label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Question Text</label>
+                                                    <textarea
+                                                        className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#C2410C]/20 text-sm h-20 resize-none font-medium"
+                                                        placeholder="Enter question text..."
+                                                        value={q.question}
+                                                        onChange={e => handleQuestionChange(qIdx, 'question', e.target.value)}
+                                                    />
+                                                </div>
 
-                            <div className="max-h-48 overflow-y-auto pr-2 grid grid-cols-5 gap-2">
-                                {Array.from({ length: newManualCount }).map((_, qIdx) => (
-                                    <div key={qIdx} className="flex flex-col items-center gap-1 bg-white p-2 rounded border border-slate-200">
-                                        <span className="text-[10px] font-bold text-slate-400">Q{bank.questions.length + qIdx + 1}</span>
-                                        <select
-                                            className="w-full text-xs font-bold text-slate-700 border-none bg-transparent focus:ring-0 cursor-pointer text-center"
-                                            value={newManualAnswers?.[qIdx] || 0}
-                                            onChange={(e) => {
-                                                const newAnswers = [...(newManualAnswers || [])];
-                                                newAnswers[qIdx] = parseInt(e.target.value);
-                                                setNewManualAnswers(newAnswers);
-                                            }}
-                                        >
-                                            <option value={0}>A</option>
-                                            <option value={1}>B</option>
-                                            <option value={2}>C</option>
-                                            <option value={3}>D</option>
-                                        </select>
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                                    {q.options.map((opt, oIdx) => (
+                                                        <div key={oIdx} className="flex items-center gap-2">
+                                                            <div className={`w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-bold ${q.answer === oIdx ? 'bg-[#C2410C] text-white' : 'bg-slate-100 text-slate-400'}`}>
+                                                                {String.fromCharCode(65 + oIdx)}
+                                                            </div>
+                                                            <input
+                                                                type="text"
+                                                                className="flex-1 px-3 py-1.5 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#C2410C]/20 text-sm"
+                                                                placeholder={`Option ${String.fromCharCode(65 + oIdx)}`}
+                                                                value={opt}
+                                                                onChange={e => handleQuestionChange(qIdx, 'options', { optIdx: oIdx, val: e.target.value })}
+                                                            />
+                                                            <input
+                                                                type="radio"
+                                                                name={`edit-answer-${qIdx}`}
+                                                                checked={q.answer === oIdx}
+                                                                onChange={() => handleQuestionChange(qIdx, 'answer', oIdx)}
+                                                                className="w-4 h-4 accent-[#C2410C] cursor-pointer"
+                                                            />
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                 ))}
                             </div>
                         </div>
-                    )}
+                    </form>
+                </div>
 
+                <div className="p-6 border-t border-gray-100 bg-gray-50 flex gap-4">
                     <button
+                        type="button"
+                        onClick={onClose}
+                        className="flex-1 py-3 rounded-xl border border-gray-200 font-bold text-slate-600 hover:bg-gray-100 transition-colors"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        form="edit-form"
                         type="submit"
                         disabled={loading}
-                        className="w-full py-2.5 rounded-lg bg-[#C2410C] hover:bg-[#9a3412] text-white font-bold shadow-lg shadow-orange-900/20 transition-all disabled:opacity-70 mt-4"
+                        className="flex-1 py-3 rounded-xl bg-[#C2410C] hover:bg-[#9a3412] text-white font-bold shadow-lg shadow-orange-900/20 transition-all disabled:opacity-70"
                     >
-                        {loading ? 'Updating...' : 'Save Changes'}
+                        {loading ? 'Saving Changes...' : 'Save Changes'}
                     </button>
-                </form>
+                </div>
             </div>
         </div>
     );

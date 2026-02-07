@@ -77,10 +77,14 @@ const QuestionBankSchema = new mongoose.Schema({
     questions: [{
         question: String,
         options: [String],
-        answer: Number // Index of the correct option
+        answer: Number, // Index of the correct option
+        filename: String // Image for this specific question
     }],
     questionsCount: { type: Number, default: 0 },
-    attempts: { type: Number, default: 0 }
+    attempts: { type: Number, default: 0 },
+    negativeMarking: { type: Boolean, default: false },
+    startTime: { type: Date },
+    endTime: { type: Date }
 }, { timestamps: true });
 
 const QuestionBank = mongoose.model('QuestionBank', QuestionBankSchema);
@@ -228,7 +232,28 @@ app.post('/api/admin/question-banks', verifyAdmin, upload.array('files', 10), as
         if (req.body.manualQuestions) {
             try {
                 questions = JSON.parse(req.body.manualQuestions);
-                questionsCount = parseInt(req.body.questionsCount) || questions.length;
+
+                // Map uploaded files to questions that expect them
+                let fileIdx = 0;
+                questions = questions.map(q => {
+                    if (q.file !== undefined || q.preview !== undefined || q.hasImage) { // Legacy or marker
+                        // ... we'll use a better marker
+                    }
+                    return q;
+                });
+
+                // Actually, the new frontend sends questions with 'file' removed but 'hasImage' or similar can be used.
+                // Let's use 'hasNewFile' as the marker.
+                questions = questions.map(q => {
+                    if (q.hasNewFile && req.files && req.files[fileIdx]) {
+                        q.filename = req.files[fileIdx].filename;
+                        fileIdx++;
+                    }
+                    delete q.hasNewFile;
+                    return q;
+                });
+
+                questionsCount = questions.length; // Fixed: Use questions.length directly after processing
             } catch (pErr) {
                 console.error("Failed to parse manual questions:", pErr);
                 return res.status(400).json({ message: "Invalid question data format" });
@@ -239,10 +264,13 @@ app.post('/api/admin/question-banks', verifyAdmin, upload.array('files', 10), as
 
         const newBank = new QuestionBank({
             ...req.body,
-            filename: filenames.length > 0 ? filenames[0] : null, // Store first file as primary legacy support
+            filename: filenames.length > 0 ? filenames[0] : null,
             filenames: filenames,
             questions: questions,
-            questionsCount: questionsCount || req.body.questionsCount || 0
+            questionsCount: questionsCount || req.body.questionsCount || 0,
+            negativeMarking: req.body.negativeMarking === 'true' || req.body.negativeMarking === true,
+            startTime: req.body.startTime ? new Date(req.body.startTime) : null,
+            endTime: req.body.endTime ? new Date(req.body.endTime) : null
         });
         await newBank.save();
         res.status(201).json(newBank);
@@ -282,61 +310,52 @@ app.put('/api/admin/question-banks/:id', verifyAdmin, upload.array('files', 10),
         if (title) bank.title = title;
         if (subject) bank.subject = subject;
         if (difficulty) bank.difficulty = difficulty;
+        if (req.body.negativeMarking !== undefined) {
+            bank.negativeMarking = req.body.negativeMarking === 'true' || req.body.negativeMarking === true;
+        }
+        if (req.body.startTime !== undefined) {
+            bank.startTime = req.body.startTime ? new Date(req.body.startTime) : null;
+        }
+        if (req.body.endTime !== undefined) {
+            bank.endTime = req.body.endTime ? new Date(req.body.endTime) : null;
+        }
 
         // Initialize with existing state
         let finalFilenames = bank.filenames && bank.filenames.length > 0 ? bank.filenames : (bank.filename ? [bank.filename] : []);
         let finalQuestions = bank.questions || [];
 
-        // 1. Handle Updates/Deletions (frontend sends updated lists)
-        if (req.body.updatedFilenames && req.body.updatedQuestions) {
+        // Process Updates & New Files
+        if (req.body.updatedQuestions) {
             try {
-                const keptFilenames = JSON.parse(req.body.updatedFilenames);
-                const keptQuestions = JSON.parse(req.body.updatedQuestions);
+                const incomingQuestions = JSON.parse(req.body.updatedQuestions);
 
                 // Identify deleted files
+                const keptFilenames = incomingQuestions.filter(q => q.filename).map(q => q.filename);
                 const filesToDelete = finalFilenames.filter(f => !keptFilenames.includes(f));
 
-                // Delete physical files
                 filesToDelete.forEach(filename => {
                     const filePath = path.join(uploadDir, filename);
                     if (fs.existsSync(filePath)) {
-                        try {
-                            fs.unlinkSync(filePath);
-                        } catch (delErr) {
-                            console.error(`Failed to delete file ${filename}:`, delErr);
-                        }
+                        try { fs.unlinkSync(filePath); } catch (e) { }
                     }
                 });
 
-                finalFilenames = keptFilenames;
-                finalQuestions = keptQuestions;
+                // Map new files to questions
+                let fileIdx = 0;
+                finalQuestions = incomingQuestions.map(q => {
+                    if (q.hasNewFile && req.files && req.files[fileIdx]) {
+                        q.filename = req.files[fileIdx].filename;
+                        fileIdx++;
+                    }
+                    delete q.hasNewFile;
+                    return q;
+                });
+
+                finalFilenames = finalQuestions.filter(q => q.filename).map(q => q.filename);
             } catch (err) {
-                console.error("Failed to parse updated lists:", err);
-                return res.status(400).json({ message: "Invalid updated data format" });
+                console.error("Update failed:", err);
+                return res.status(400).json({ message: "Invalid update data" });
             }
-        }
-
-        // Process New Files & Questions
-        if (req.files && req.files.length > 0) {
-            const newFilenames = req.files.map(f => f.filename);
-
-            let newQuestions = [];
-            if (req.body.manualQuestions) {
-                try {
-                    newQuestions = JSON.parse(req.body.manualQuestions);
-                } catch (pErr) {
-                    console.error("Failed to parse manual questions:", pErr);
-                    return res.status(400).json({ message: "Invalid question data format" });
-                }
-            }
-
-            // Append to existing
-            finalFilenames = [...finalFilenames, ...newFilenames];
-            // If legacy filename exists and not in filenames, ensure we don't handle it poorly, 
-            // but we are just appending so it should be fine. 
-            // Ideally we migrate legacy `filename` to `filenames` but for now just append.
-
-            finalQuestions = [...finalQuestions, ...newQuestions];
         }
 
         // Apply final changes
@@ -402,9 +421,23 @@ app.post('/api/user/tests/:id/submit', verifyToken, async (req, res) => {
         if (!test) return res.status(404).json({ message: 'Test not found' });
 
         let score = 0;
+        let correctCount = 0;
+        let wrongCount = 0;
+
         test.questions.forEach((q, idx) => {
-            if (answers[idx] === q.answer) score++;
+            if (answers[idx] === q.answer) {
+                correctCount++;
+            } else if (answers[idx] !== null && answers[idx] !== undefined && answers[idx] !== '') {
+                wrongCount++;
+            }
         });
+
+        if (test.negativeMarking) {
+            score = correctCount - (wrongCount * 0.25);
+            if (score < 0) score = 0;
+        } else {
+            score = correctCount;
+        }
 
         const percentage = ((score / test.questions.length) * 100).toFixed(1);
 
