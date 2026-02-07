@@ -72,7 +72,8 @@ const QuestionBankSchema = new mongoose.Schema({
     title: String,
     subject: String,
     difficulty: String,
-    filename: String, // For legacy/file uploads
+    filename: String, // Deprecated, kept for backward compatibility
+    filenames: [String], // Stores multiple file paths
     questions: [{
         question: String,
         options: [String],
@@ -218,12 +219,12 @@ app.get('/api/admin/question-banks', verifyAdmin, async (req, res) => {
     } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
-app.post('/api/admin/question-banks', verifyAdmin, upload.single('file'), async (req, res) => {
+app.post('/api/admin/question-banks', verifyAdmin, upload.array('files', 10), async (req, res) => {
     try {
         let questions = [];
         let questionsCount = 0;
 
-        // Process Manual Questions (from Image uploads)
+        // Process Manual Questions
         if (req.body.manualQuestions) {
             try {
                 questions = JSON.parse(req.body.manualQuestions);
@@ -234,9 +235,12 @@ app.post('/api/admin/question-banks', verifyAdmin, upload.single('file'), async 
             }
         }
 
+        const filenames = req.files ? req.files.map(f => f.filename) : [];
+
         const newBank = new QuestionBank({
             ...req.body,
-            filename: req.file ? req.file.filename : null,
+            filename: filenames.length > 0 ? filenames[0] : null, // Store first file as primary legacy support
+            filenames: filenames,
             questions: questions,
             questionsCount: questionsCount || req.body.questionsCount || 0
         });
@@ -248,10 +252,21 @@ app.post('/api/admin/question-banks', verifyAdmin, upload.single('file'), async 
 app.delete('/api/admin/question-banks/:id', verifyAdmin, async (req, res) => {
     try {
         const bank = await QuestionBank.findById(req.params.id);
+
+        // Delete legacy single file
         if (bank && bank.filename) {
             const filePath = path.join(uploadDir, bank.filename);
             if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
         }
+
+        // Delete multiple files
+        if (bank && bank.filenames && bank.filenames.length > 0) {
+            bank.filenames.forEach(filename => {
+                const filePath = path.join(uploadDir, filename);
+                if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+            });
+        }
+
         await QuestionBank.findByIdAndDelete(req.params.id);
         res.json({ message: 'Question bank deleted' });
     } catch (err) { res.status(500).json({ message: err.message }); }
@@ -274,7 +289,17 @@ app.get('/api/admin/question-banks/:id/download', verifyAdmin, async (req, res) 
         const bank = await QuestionBank.findById(req.params.id);
         if (!bank) return res.status(404).json({ message: 'Not found' });
 
-        if (bank.filename) {
+        // Check if there are multiple files
+        if (bank.filenames && bank.filenames.length > 0) {
+            // For now, if multiple, we just download the first one to avoid complexity of zipping on the fly
+            // The user mainly asked for upload capability.
+            const mainFile = bank.filenames[0];
+            const filePath = path.join(uploadDir, mainFile);
+            if (fs.existsSync(filePath)) {
+                return res.download(filePath, mainFile);
+            }
+        }
+        else if (bank.filename) {
             const filePath = path.join(uploadDir, bank.filename);
             if (fs.existsSync(filePath)) {
                 return res.download(filePath, bank.filename);

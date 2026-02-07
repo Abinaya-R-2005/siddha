@@ -393,7 +393,7 @@ const UploadModal = ({ onClose, onSuccess, onAuthError }) => {
         title: '',
         subject: 'Noi Naadal',
         difficulty: 'Easy',
-        file: null,
+        files: [],
         manualCount: 10,
         manualAnswers: new Array(10).fill(0)
     });
@@ -401,14 +401,18 @@ const UploadModal = ({ onClose, onSuccess, onAuthError }) => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!formData.file) return alert('Please select a file');
+        if (!formData.files || formData.files.length === 0) return alert('Please select at least one file');
 
         setLoading(true);
         const data = new FormData();
         data.append('title', formData.title);
         data.append('subject', formData.subject);
         data.append('difficulty', formData.difficulty);
-        data.append('file', formData.file);
+
+        // Append all files
+        formData.files.forEach(file => {
+            data.append('files', file);
+        });
 
         // Append manual questions structure for images
         const generatedQuestions = formData.manualAnswers.map((ans, idx) => ({
@@ -495,34 +499,34 @@ const UploadModal = ({ onClose, onSuccess, onAuthError }) => {
                             <input
                                 required
                                 type="file"
+                                multiple
                                 accept="image/png, image/jpeg, image/jpg"
                                 className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-[#C2410C]/10 file:text-[#C2410C] hover:file:bg-[#C2410C]/20"
-                                onChange={e => setFormData({ ...formData, file: e.target.files[0] })}
+                                onChange={e => {
+                                    const files = Array.from(e.target.files);
+                                    setFormData({
+                                        ...formData,
+                                        files: files,
+                                        manualCount: files.length,
+                                        manualAnswers: new Array(files.length).fill(0)
+                                    });
+                                }}
                             />
                         </div>
                     </div>
 
                     {/* Answer Key Generator for Images */}
-                    {formData.file && (
+                    {formData.files && formData.files.length > 0 && (
                         <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 animate-in slide-in-from-top-2">
                             <div className="flex justify-between items-center mb-4">
-                                <h4 className="font-bold text-slate-700 text-sm">Answer Key Setup</h4>
+                                <h4 className="font-bold text-slate-700 text-sm">Answer Key Setup (1 Question per Image)</h4>
                                 <div className="flex items-center gap-2">
                                     <label className="text-xs font-semibold text-slate-500">Total Questions:</label>
                                     <input
+                                        disabled
                                         type="number"
-                                        min="1"
-                                        max="100"
-                                        className="w-16 px-2 py-1 rounded border border-gray-300 text-center text-sm font-bold"
+                                        className="w-16 px-2 py-1 rounded border border-gray-300 text-center text-sm font-bold bg-gray-100 text-slate-500 cursor-not-allowed"
                                         value={formData.manualCount}
-                                        onChange={(e) => {
-                                            const count = parseInt(e.target.value) || 0;
-                                            setFormData({
-                                                ...formData,
-                                                manualCount: count,
-                                                manualAnswers: new Array(count).fill(0)
-                                            });
-                                        }}
                                     />
                                 </div>
                             </div>
@@ -549,7 +553,7 @@ const UploadModal = ({ onClose, onSuccess, onAuthError }) => {
                                 ))}
                             </div>
                             <p className="text-[10px] text-slate-400 mt-2 text-center">
-                                Select the correct option for each question corresponding to the uploaded image.
+                                Select the correct option for each question corresponding to the uploaded images.
                             </p>
                         </div>
                     )}
