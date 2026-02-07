@@ -283,6 +283,39 @@ app.put('/api/admin/question-banks/:id', verifyAdmin, upload.array('files', 10),
         if (subject) bank.subject = subject;
         if (difficulty) bank.difficulty = difficulty;
 
+        // Initialize with existing state
+        let finalFilenames = bank.filenames && bank.filenames.length > 0 ? bank.filenames : (bank.filename ? [bank.filename] : []);
+        let finalQuestions = bank.questions || [];
+
+        // 1. Handle Updates/Deletions (frontend sends updated lists)
+        if (req.body.updatedFilenames && req.body.updatedQuestions) {
+            try {
+                const keptFilenames = JSON.parse(req.body.updatedFilenames);
+                const keptQuestions = JSON.parse(req.body.updatedQuestions);
+
+                // Identify deleted files
+                const filesToDelete = finalFilenames.filter(f => !keptFilenames.includes(f));
+
+                // Delete physical files
+                filesToDelete.forEach(filename => {
+                    const filePath = path.join(uploadDir, filename);
+                    if (fs.existsSync(filePath)) {
+                        try {
+                            fs.unlinkSync(filePath);
+                        } catch (delErr) {
+                            console.error(`Failed to delete file ${filename}:`, delErr);
+                        }
+                    }
+                });
+
+                finalFilenames = keptFilenames;
+                finalQuestions = keptQuestions;
+            } catch (err) {
+                console.error("Failed to parse updated lists:", err);
+                return res.status(400).json({ message: "Invalid updated data format" });
+            }
+        }
+
         // Process New Files & Questions
         if (req.files && req.files.length > 0) {
             const newFilenames = req.files.map(f => f.filename);
@@ -298,14 +331,19 @@ app.put('/api/admin/question-banks/:id', verifyAdmin, upload.array('files', 10),
             }
 
             // Append to existing
-            bank.filenames = [...(bank.filenames || []), ...newFilenames];
+            finalFilenames = [...finalFilenames, ...newFilenames];
             // If legacy filename exists and not in filenames, ensure we don't handle it poorly, 
             // but we are just appending so it should be fine. 
             // Ideally we migrate legacy `filename` to `filenames` but for now just append.
 
-            bank.questions = [...bank.questions, ...newQuestions];
-            bank.questionsCount = bank.questions.length;
+            finalQuestions = [...finalQuestions, ...newQuestions];
         }
+
+        // Apply final changes
+        bank.filenames = finalFilenames;
+        bank.filename = finalFilenames.length > 0 ? finalFilenames[0] : null;
+        bank.questions = finalQuestions;
+        bank.questionsCount = finalQuestions.length;
 
         await bank.save();
         res.json(bank);

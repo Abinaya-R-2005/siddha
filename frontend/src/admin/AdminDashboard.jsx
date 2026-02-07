@@ -586,6 +586,16 @@ const EditModal = ({ bank, onClose, onSuccess }) => {
         subject: bank.subject,
         difficulty: bank.difficulty
     });
+
+    // Initialize existing state
+    // Handle legacy single-file banks vs new multi-file banks
+    const initialFilenames = bank.filenames && bank.filenames.length > 0
+        ? bank.filenames
+        : (bank.filename ? [bank.filename] : []);
+
+    const [existingFilenames, setExistingFilenames] = useState(initialFilenames);
+    const [existingQuestions, setExistingQuestions] = useState(bank.questions || []);
+
     const [newFiles, setNewFiles] = useState([]);
     const [newManualCount, setNewManualCount] = useState(0);
     const [newManualAnswers, setNewManualAnswers] = useState([]);
@@ -600,16 +610,20 @@ const EditModal = ({ bank, onClose, onSuccess }) => {
         data.append('subject', formData.subject);
         data.append('difficulty', formData.difficulty);
 
+        // Send backend the state of currently KEPT files/questions
+        // The backend will compare this with DB and delete missing ones
+        data.append('updatedFilenames', JSON.stringify(existingFilenames));
+        data.append('updatedQuestions', JSON.stringify(existingQuestions));
+
         if (newFiles.length > 0) {
             newFiles.forEach(file => {
                 data.append('files', file);
             });
 
             // Generate questions for NEW files starting from the correct index
-            // Actually, for simplicity, we just generate generic "Question X" for the new ones
-            // The backend appends them.
+            const startIdx = existingQuestions.length;
             const generatedQuestions = newManualAnswers.map((ans, idx) => ({
-                question: `Question ${bank.questions.length + idx + 1}`, // Continues numbering
+                question: `Question ${startIdx + idx + 1}`,
                 options: ["Option A", "Option B", "Option C", "Option D"],
                 answer: ans
             }));
@@ -618,7 +632,6 @@ const EditModal = ({ bank, onClose, onSuccess }) => {
 
         try {
             const token = localStorage.getItem('token');
-            // We use the same endpoint, but now it handles files via PUT
             await axios.put(`http://localhost:5000/api/admin/question-banks/${bank._id}`, data, {
                 headers: {
                     Authorization: `Bearer ${token}`,
@@ -633,6 +646,21 @@ const EditModal = ({ bank, onClose, onSuccess }) => {
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleDeleteExisting = (index) => {
+        if (window.confirm('Are you sure you want to delete this question?')) {
+            const upFilenames = existingFilenames.filter((_, i) => i !== index);
+            const upQuestions = existingQuestions.filter((_, i) => i !== index);
+            setExistingFilenames(upFilenames);
+            setExistingQuestions(upQuestions);
+        }
+    };
+
+    const handleUpdateExistingAnswer = (index, newAnswer) => {
+        const upQuestions = [...existingQuestions];
+        upQuestions[index] = { ...upQuestions[index], answer: parseInt(newAnswer) };
+        setExistingQuestions(upQuestions);
     };
 
     return (
@@ -675,6 +703,46 @@ const EditModal = ({ bank, onClose, onSuccess }) => {
                             <option>Medium</option>
                             <option>Hard</option>
                         </select>
+                    </div>
+
+                    <div className="pt-4 border-t border-slate-100">
+                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Existing Questions ({existingQuestions.length})</label>
+                        <div className="max-h-48 overflow-y-auto pr-2 space-y-2">
+                            {existingQuestions.map((q, idx) => (
+                                <div key={idx} className="flex items-center justify-between bg-slate-50 p-2 rounded-lg border border-slate-200">
+                                    <div className="flex items-center gap-3">
+                                        <span className="text-xs font-bold text-slate-400 w-6">Q{idx + 1}</span>
+                                        <div className="flex flex-col">
+                                            <span className="text-[10px] text-slate-500 truncate max-w-[120px]" title={existingFilenames[idx]}>
+                                                {existingFilenames[idx]}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <select
+                                            className="text-xs font-bold text-slate-700 bg-white border border-slate-200 rounded px-1 py-1 cursor-pointer focus:outline-none focus:border-[#C2410C]"
+                                            value={q.answer}
+                                            onChange={(e) => handleUpdateExistingAnswer(idx, e.target.value)}
+                                        >
+                                            <option value={0}>A</option>
+                                            <option value={1}>B</option>
+                                            <option value={2}>C</option>
+                                            <option value={3}>D</option>
+                                        </select>
+                                        <button
+                                            type="button"
+                                            onClick={() => handleDeleteExisting(idx)}
+                                            className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors"
+                                        >
+                                            <Trash2 size={14} />
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                            {existingQuestions.length === 0 && (
+                                <p className="text-xs text-slate-400 text-center py-2">No questions remaining.</p>
+                            )}
+                        </div>
                     </div>
 
                     <div className="pt-4 border-t border-slate-100">
