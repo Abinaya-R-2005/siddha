@@ -22,7 +22,7 @@ const Select = ({ label, options, value, onChange, name, placeholder, icon: Icon
             border-2 border-gray-200 rounded-xl text-base 
             outline-none transition-all duration-200
             appearance-none bg-gray-50/50
-            focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 focus:shadow-lg
+            focus:border-[#0A1629] focus:ring-4 focus:ring-[#0A1629]/5 focus:shadow-lg
             hover:border-gray-300
           `}
                 >

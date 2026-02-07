@@ -4,6 +4,7 @@ import Login from './pages/Login';
 import StudentRegister from './pages/register/StudentRegister';
 import FacultyRegister from './pages/register/FacultyRegister';
 import Dashboard from './pages/Dashboard';
+import CreateTest from './pages/CreateTest';
 import AdminDashboard from './admin/AdminDashboard';
 import ProfilePage from './pages/ProfilePage';
 import ProgressPage from './pages/ProgressPage';
@@ -23,6 +24,7 @@ function App() {
 
         {/* Protected Dashboard Route */}
         <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/create-test" element={<CreateTest />} />
         <Route path="/admin" element={<AdminDashboard />} />
         <Route path="/profilepage" element={<ProfilePage />} />
         <Route path="/progresspage" element={<ProgressPage />} />

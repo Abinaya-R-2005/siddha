@@ -124,6 +124,55 @@ const TestPage = () => {
                     >
                         Back to Dashboard
                     </button>
+
+                    {/* Review Section */}
+                    {result.answers && (
+                        <div className="mt-16 w-full text-left">
+                            <h3 className="text-2xl font-serif font-bold text-slate-900 mb-8 border-b border-slate-100 pb-4">
+                                Answer Key & Review
+                            </h3>
+                            <div className="space-y-8">
+                                {test.questions.map((q, qIdx) => {
+                                    const userAnswer = selectedAnswers[qIdx];
+                                    // Assuming result.answers contains the correct answer indices
+                                    const correctAnswer = result.answers[qIdx];
+                                    const isCorrect = userAnswer === correctAnswer;
+
+                                    return (
+                                        <div key={qIdx} className={`p-6 rounded-3xl border-2 ${isCorrect ? 'border-teal-100 bg-teal-50/30' : 'border-red-100 bg-red-50/30'}`}>
+                                            <h4 className="font-bold text-lg text-slate-800 mb-4 flex gap-3">
+                                                <span className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${isCorrect ? 'bg-teal-500 text-white' : 'bg-red-500 text-white'}`}>
+                                                    {qIdx + 1}
+                                                </span>
+                                                {q.question}
+                                            </h4>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pl-11">
+                                                {q.options.map((opt, oIdx) => {
+                                                    let optionClass = "border-slate-100 bg-white text-slate-500";
+                                                    let icon = null;
+
+                                                    if (oIdx === correctAnswer) {
+                                                        optionClass = "border-teal-500 bg-teal-100 text-teal-800 font-bold";
+                                                        icon = <CheckCircle2 size={18} className="text-teal-600" />;
+                                                    } else if (oIdx === userAnswer && !isCorrect) {
+                                                        optionClass = "border-red-500 bg-red-100 text-red-800 font-bold";
+                                                        icon = <AlertCircle size={18} className="text-red-600" />;
+                                                    }
+
+                                                    return (
+                                                        <div key={oIdx} className={`px-4 py-3 rounded-xl border flex items-center justify-between ${optionClass}`}>
+                                                            <span>{opt}</span>
+                                                            {icon}
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
                 </motion.div>
             </div>
         );

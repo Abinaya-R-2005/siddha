@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, BookOpen, LineChart, User,
   LogOut, Menu, X, Award, Flame, Clock,
-  Calendar, ChevronDown
+  Calendar, ChevronDown, FileText, ArrowRight
 } from 'lucide-react';
 
 const Dashboard = () => {
@@ -135,6 +135,32 @@ const Dashboard = () => {
             </motion.div>
           ))}
         </div>
+
+        {/* FACULTY TOOLS SECTION */}
+        {user.role?.toLowerCase() === 'faculty' && (
+          <section className="mb-12">
+            <h3 className="text-2xl font-serif font-bold text-slate-800 mb-6">Faculty Tools</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <motion.div
+                whileHover={{ y: -5 }}
+                className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm transition-all hover:border-[rgb(13,148,136)]/20 cursor-pointer group"
+                onClick={() => navigate('/create-test')}
+              >
+                <div className="flex justify-between items-start mb-4">
+                  <div className="p-3 rounded-xl bg-[rgb(13,148,136)]/5 text-[rgb(13,148,136)]">
+                    <FileText size={24} />
+                  </div>
+                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Assessment</span>
+                </div>
+                <h3 className="text-xl font-bold text-slate-900 mb-2 group-hover:text-[rgb(13,148,136)] transition-colors">Assign New Test</h3>
+                <p className="text-sm text-gray-500 mb-6">Create questions, set topics, and define marking schemes for students.</p>
+                <div className="flex items-center text-[rgb(13,148,136)] font-bold text-sm gap-2">
+                  Create Test <ArrowRight size={16} />
+                </div>
+              </motion.div>
+            </div>
+          </section>
+        )}
 
         {/* UPCOMING EXAMS SECTION */}
         <section className="mb-12">
