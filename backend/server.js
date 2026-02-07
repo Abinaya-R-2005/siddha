@@ -272,15 +272,43 @@ app.delete('/api/admin/question-banks/:id', verifyAdmin, async (req, res) => {
     } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
-app.put('/api/admin/question-banks/:id', verifyAdmin, async (req, res) => {
+app.put('/api/admin/question-banks/:id', verifyAdmin, upload.array('files', 10), async (req, res) => {
     try {
         const { title, subject, difficulty } = req.body;
-        const updated = await QuestionBank.findByIdAndUpdate(
-            req.params.id,
-            { title, subject, difficulty },
-            { new: true }
-        );
-        res.json(updated);
+        const bank = await QuestionBank.findById(req.params.id);
+        if (!bank) return res.status(404).json({ message: 'Question bank not found' });
+
+        // Update metadata
+        if (title) bank.title = title;
+        if (subject) bank.subject = subject;
+        if (difficulty) bank.difficulty = difficulty;
+
+        // Process New Files & Questions
+        if (req.files && req.files.length > 0) {
+            const newFilenames = req.files.map(f => f.filename);
+
+            let newQuestions = [];
+            if (req.body.manualQuestions) {
+                try {
+                    newQuestions = JSON.parse(req.body.manualQuestions);
+                } catch (pErr) {
+                    console.error("Failed to parse manual questions:", pErr);
+                    return res.status(400).json({ message: "Invalid question data format" });
+                }
+            }
+
+            // Append to existing
+            bank.filenames = [...(bank.filenames || []), ...newFilenames];
+            // If legacy filename exists and not in filenames, ensure we don't handle it poorly, 
+            // but we are just appending so it should be fine. 
+            // Ideally we migrate legacy `filename` to `filenames` but for now just append.
+
+            bank.questions = [...bank.questions, ...newQuestions];
+            bank.questionsCount = bank.questions.length;
+        }
+
+        await bank.save();
+        res.json(bank);
     } catch (err) { res.status(500).json({ message: err.message }); }
 });
 

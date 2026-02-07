@@ -586,15 +586,44 @@ const EditModal = ({ bank, onClose, onSuccess }) => {
         subject: bank.subject,
         difficulty: bank.difficulty
     });
+    const [newFiles, setNewFiles] = useState([]);
+    const [newManualCount, setNewManualCount] = useState(0);
+    const [newManualAnswers, setNewManualAnswers] = useState([]);
     const [loading, setLoading] = useState(false);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
+
+        const data = new FormData();
+        data.append('title', formData.title);
+        data.append('subject', formData.subject);
+        data.append('difficulty', formData.difficulty);
+
+        if (newFiles.length > 0) {
+            newFiles.forEach(file => {
+                data.append('files', file);
+            });
+
+            // Generate questions for NEW files starting from the correct index
+            // Actually, for simplicity, we just generate generic "Question X" for the new ones
+            // The backend appends them.
+            const generatedQuestions = newManualAnswers.map((ans, idx) => ({
+                question: `Question ${bank.questions.length + idx + 1}`, // Continues numbering
+                options: ["Option A", "Option B", "Option C", "Option D"],
+                answer: ans
+            }));
+            data.append('manualQuestions', JSON.stringify(generatedQuestions));
+        }
+
         try {
             const token = localStorage.getItem('token');
-            await axios.put(`http://localhost:5000/api/admin/question-banks/${bank._id}`, formData, {
-                headers: { Authorization: `Bearer ${token}` }
+            // We use the same endpoint, but now it handles files via PUT
+            await axios.put(`http://localhost:5000/api/admin/question-banks/${bank._id}`, data, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    'Content-Type': 'multipart/form-data'
+                }
             });
             onSuccess();
         } catch (err) {
@@ -608,7 +637,7 @@ const EditModal = ({ bank, onClose, onSuccess }) => {
 
     return (
         <div className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-4 backdrop-blur-sm">
-            <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl p-6 relative">
+            <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl p-6 relative max-h-[90vh] overflow-y-auto">
                 <button onClick={onClose} className="absolute right-4 top-4 p-1 hover:bg-gray-100 rounded-full"><X size={20} /></button>
                 <h3 className="text-xl font-serif font-bold text-slate-800 mb-6">Edit Question Bank</h3>
                 <form onSubmit={handleSubmit} className="space-y-4">
@@ -647,6 +676,54 @@ const EditModal = ({ bank, onClose, onSuccess }) => {
                             <option>Hard</option>
                         </select>
                     </div>
+
+                    <div className="pt-4 border-t border-slate-100">
+                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Add More Questions (Images)</label>
+                        <input
+                            type="file"
+                            multiple
+                            accept="image/png, image/jpeg, image/jpg"
+                            className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-[#C2410C]/10 file:text-[#C2410C] hover:file:bg-[#C2410C]/20"
+                            onChange={e => {
+                                const files = Array.from(e.target.files);
+                                setNewFiles(files);
+                                setNewManualCount(files.length);
+                                setNewManualAnswers(new Array(files.length).fill(0));
+                            }}
+                        />
+                    </div>
+
+                    {newFiles.length > 0 && (
+                        <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 animate-in slide-in-from-top-2">
+                            <div className="flex justify-between items-center mb-4">
+                                <h4 className="font-bold text-slate-700 text-sm">Answer Key for New Images</h4>
+                                <span className="text-xs font-bold text-slate-400">{newFiles.length} New Questions</span>
+                            </div>
+
+                            <div className="max-h-48 overflow-y-auto pr-2 grid grid-cols-5 gap-2">
+                                {Array.from({ length: newManualCount }).map((_, qIdx) => (
+                                    <div key={qIdx} className="flex flex-col items-center gap-1 bg-white p-2 rounded border border-slate-200">
+                                        <span className="text-[10px] font-bold text-slate-400">Q{bank.questions.length + qIdx + 1}</span>
+                                        <select
+                                            className="w-full text-xs font-bold text-slate-700 border-none bg-transparent focus:ring-0 cursor-pointer text-center"
+                                            value={newManualAnswers?.[qIdx] || 0}
+                                            onChange={(e) => {
+                                                const newAnswers = [...(newManualAnswers || [])];
+                                                newAnswers[qIdx] = parseInt(e.target.value);
+                                                setNewManualAnswers(newAnswers);
+                                            }}
+                                        >
+                                            <option value={0}>A</option>
+                                            <option value={1}>B</option>
+                                            <option value={2}>C</option>
+                                            <option value={3}>D</option>
+                                        </select>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
                     <button
                         type="submit"
                         disabled={loading}
