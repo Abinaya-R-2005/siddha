@@ -35,7 +35,16 @@ const storage = multer.diskStorage({
     destination: (req, file, cb) => cb(null, uploadDir),
     filename: (req, file, cb) => cb(null, `qb-${Date.now()}${path.extname(file.originalname)}`)
 });
-const upload = multer({ storage });
+
+const fileFilter = (req, file, cb) => {
+    if (file.mimetype === 'image/jpeg' || file.mimetype === 'image/jpg' || file.mimetype === 'image/png') {
+        cb(null, true);
+    } else {
+        cb(new Error('Only image files are allowed!'), false);
+    }
+};
+
+const upload = multer({ storage, fileFilter });
 
 // --- MODELS ---
 
@@ -214,20 +223,14 @@ app.post('/api/admin/question-banks', verifyAdmin, upload.single('file'), async 
         let questions = [];
         let questionsCount = 0;
 
-        // 1. Try JSON File Parsing
-        if (req.file && req.file.mimetype === 'application/json') {
-            const fileData = fs.readFileSync(req.file.path, 'utf8');
-            const parsed = JSON.parse(fileData);
-            questions = parsed.questions || [];
-            questionsCount = questions.length;
-        }
-        // 2. Try Manual Questions (from PDF/Image uploads)
-        else if (req.body.manualQuestions) {
+        // Process Manual Questions (from Image uploads)
+        if (req.body.manualQuestions) {
             try {
                 questions = JSON.parse(req.body.manualQuestions);
                 questionsCount = parseInt(req.body.questionsCount) || questions.length;
             } catch (pErr) {
                 console.error("Failed to parse manual questions:", pErr);
+                return res.status(400).json({ message: "Invalid question data format" });
             }
         }
 

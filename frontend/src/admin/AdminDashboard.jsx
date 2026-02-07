@@ -410,16 +410,14 @@ const UploadModal = ({ onClose, onSuccess, onAuthError }) => {
         data.append('difficulty', formData.difficulty);
         data.append('file', formData.file);
 
-        // If not JSON, append manual questions structure
-        if (!formData.file.name.endsWith('.json')) {
-            const generatedQuestions = formData.manualAnswers.map((ans, idx) => ({
-                question: `Question ${idx + 1}`,
-                options: ["Option A", "Option B", "Option C", "Option D"],
-                answer: ans
-            }));
-            data.append('manualQuestions', JSON.stringify(generatedQuestions));
-            data.append('questionsCount', formData.manualCount);
-        }
+        // Append manual questions structure for images
+        const generatedQuestions = formData.manualAnswers.map((ans, idx) => ({
+            question: `Question ${idx + 1}`,
+            options: ["Option A", "Option B", "Option C", "Option D"],
+            answer: ans
+        }));
+        data.append('manualQuestions', JSON.stringify(generatedQuestions));
+        data.append('questionsCount', formData.manualCount);
 
         try {
             const token = localStorage.getItem('token');
@@ -493,19 +491,19 @@ const UploadModal = ({ onClose, onSuccess, onAuthError }) => {
                             </select>
                         </div>
                         <div>
-                            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Upload Question Paper</label>
+                            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Upload Question Paper (Images Only)</label>
                             <input
                                 required
                                 type="file"
-                                accept=".json,.pdf,.jpg,.jpeg,.png"
+                                accept="image/png, image/jpeg, image/jpg"
                                 className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-[#C2410C]/10 file:text-[#C2410C] hover:file:bg-[#C2410C]/20"
                                 onChange={e => setFormData({ ...formData, file: e.target.files[0] })}
                             />
                         </div>
                     </div>
 
-                    {/* Answer Key Generator for Non-JSON Files */}
-                    {formData.file && !formData.file.name.endsWith('.json') && (
+                    {/* Answer Key Generator for Images */}
+                    {formData.file && (
                         <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 animate-in slide-in-from-top-2">
                             <div className="flex justify-between items-center mb-4">
                                 <h4 className="font-bold text-slate-700 text-sm">Answer Key Setup</h4>
@@ -551,15 +549,8 @@ const UploadModal = ({ onClose, onSuccess, onAuthError }) => {
                                 ))}
                             </div>
                             <p className="text-[10px] text-slate-400 mt-2 text-center">
-                                Select the correct option for each question corresponding to the uploaded file.
+                                Select the correct option for each question corresponding to the uploaded image.
                             </p>
-                        </div>
-                    )}
-
-                    {formData.file && formData.file.name.endsWith('.json') && (
-                        <div className="bg-green-50 p-3 rounded-lg border border-green-100 flex items-center gap-2">
-                            <Check className="text-green-600" size={16} />
-                            <p className="text-xs text-green-700 font-medium">JSON format detected. Questions and answers will be parsed automatically.</p>
                         </div>
                     )}
 
