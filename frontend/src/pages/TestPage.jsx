@@ -89,7 +89,7 @@ const TestPage = () => {
 
     if (loading) return (
         <div className="min-h-screen bg-[#FDFCFB] flex items-center justify-center">
-            <Loader2 className="animate-spin text-teal-600" size={48} />
+            <Loader2 className="animate-spin text-[#0F172A]" size={48} />
         </div>
     );
 
@@ -101,7 +101,7 @@ const TestPage = () => {
                     animate={{ opacity: 1, scale: 1 }}
                     className="max-w-2xl w-full bg-white rounded-[3rem] shadow-2xl border border-slate-100 p-12 text-center"
                 >
-                    <div className="inline-flex p-6 rounded-3xl bg-teal-50 text-teal-600 mb-8">
+                    <div className="inline-flex p-6 rounded-3xl bg-[#0F172A]/5 text-[#0F172A] mb-8">
                         <Trophy size={64} />
                     </div>
                     <h2 className="text-4xl font-serif font-bold text-slate-900 mb-2">Test Completed!</h2>
@@ -110,7 +110,7 @@ const TestPage = () => {
                     <div className="grid grid-cols-2 gap-8 mb-12">
                         <div className="p-8 rounded-3xl bg-slate-50 border border-slate-100">
                             <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Score</p>
-                            <h3 className="text-5xl font-black text-teal-600">{result.score}%</h3>
+                            <h3 className="text-5xl font-black text-[#0F172A]">{result.score}%</h3>
                         </div>
                         <div className="p-8 rounded-3xl bg-slate-50 border border-slate-100">
                             <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Correct</p>
@@ -120,7 +120,7 @@ const TestPage = () => {
 
                     <button
                         onClick={() => navigate('/dashboard')}
-                        className="w-full bg-[#0D9488] hover:bg-[#0A756C] text-white font-bold py-5 rounded-2xl shadow-xl transition-all text-xl"
+                        className="w-full bg-[#0F172A] hover:bg-[#1e293b] text-white font-bold py-5 rounded-2xl shadow-xl transition-all text-xl"
                     >
                         Back to Dashboard
                     </button>
@@ -139,9 +139,9 @@ const TestPage = () => {
                                     const isCorrect = userAnswer === correctAnswer;
 
                                     return (
-                                        <div key={qIdx} className={`p-6 rounded-3xl border-2 ${isCorrect ? 'border-teal-100 bg-teal-50/30' : 'border-red-100 bg-red-50/30'}`}>
+                                        <div key={qIdx} className={`p-6 rounded-3xl border-2 ${isCorrect ? 'border-blue-100 bg-blue-50/30' : 'border-red-100 bg-red-50/30'}`}>
                                             <h4 className="font-bold text-lg text-slate-800 mb-4 flex gap-3">
-                                                <span className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${isCorrect ? 'bg-teal-500 text-white' : 'bg-red-500 text-white'}`}>
+                                                <span className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${isCorrect ? 'bg-[#0F172A] text-white' : 'bg-red-500 text-white'}`}>
                                                     {qIdx + 1}
                                                 </span>
                                                 {q.question}
@@ -152,8 +152,8 @@ const TestPage = () => {
                                                     let icon = null;
 
                                                     if (oIdx === correctAnswer) {
-                                                        optionClass = "border-teal-500 bg-teal-100 text-teal-800 font-bold";
-                                                        icon = <CheckCircle2 size={18} className="text-teal-600" />;
+                                                        optionClass = "border-blue-500 bg-blue-100 text-blue-900 font-bold";
+                                                        icon = <CheckCircle2 size={18} className="text-[#0F172A]" />;
                                                     } else if (oIdx === userAnswer && !isCorrect) {
                                                         optionClass = "border-red-500 bg-red-100 text-red-800 font-bold";
                                                         icon = <AlertCircle size={18} className="text-red-600" />;
@@ -190,7 +190,7 @@ const TestPage = () => {
                     </button>
                     <div>
                         <h1 className="text-xl font-serif font-bold text-slate-800">{test.title}</h1>
-                        <p className="text-xs font-medium text-teal-600 uppercase tracking-widest">{test.subject}</p>
+                        <p className="text-xs font-medium text-blue-900 uppercase tracking-widest">{test.subject}</p>
                     </div>
                 </div>
 
@@ -205,7 +205,7 @@ const TestPage = () => {
                 <motion.div
                     initial={{ width: 0 }}
                     animate={{ width: `${((currentQuestion + 1) / test.questions.length) * 100}%` }}
-                    className="h-full bg-teal-500"
+                    className="h-full bg-[#0F172A]"
                 />
             </div>
 
@@ -259,21 +259,21 @@ const TestPage = () => {
                                         key={idx}
                                         onClick={() => handleOptionSelect(idx)}
                                         className={`group flex items-center justify-between p-4 md:p-6 rounded-[1.5rem] border-2 transition-all text-left ${selectedAnswers[currentQuestion] === idx
-                                            ? 'border-teal-500 bg-teal-50/30'
-                                            : 'border-slate-100 bg-white hover:border-teal-200 hover:bg-slate-50'
+                                            ? 'border-[#0F172A] bg-[#0F172A]/5'
+                                            : 'border-slate-100 bg-white hover:border-blue-200 hover:bg-slate-50'
                                             }`}
                                     >
                                         <div className="flex items-center gap-4">
                                             <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg font-bold transition-all ${selectedAnswers[currentQuestion] === idx
-                                                ? 'bg-teal-500 text-white'
-                                                : 'bg-slate-100 text-slate-400 group-hover:bg-teal-100 group-hover:text-teal-600'
+                                                ? 'bg-[#0F172A] text-white'
+                                                : 'bg-slate-100 text-slate-400 group-hover:bg-blue-100 group-hover:text-blue-900'
                                                 }`}>
                                                 {String.fromCharCode(65 + idx)}
                                             </div>
                                             <span className="text-lg font-medium text-slate-700">{option}</span>
                                         </div>
                                         {selectedAnswers[currentQuestion] === idx && (
-                                            <CheckCircle2 size={24} className="text-teal-500" />
+                                            <CheckCircle2 size={24} className="text-[#0F172A]" />
                                         )}
                                     </button>
                                 ))}

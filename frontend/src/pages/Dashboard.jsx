@@ -51,7 +51,7 @@ const Dashboard = () => {
   }, [navigate]);
 
   const stats = [
-    { label: "Tests Completed", value: user.testsCompleted || "0", sub: "Keep going!", icon: BookOpen, color: "text-teal-600", bg: "bg-teal-50", category: "Overall" },
+    { label: "Tests Completed", value: user.testsCompleted || "0", sub: "Keep going!", icon: BookOpen, color: "text-blue-900", bg: "bg-blue-50", category: "Overall" },
     { label: "Average Score", value: `${user.averageScore || 0}%`, sub: "View Details", icon: Award, color: "text-orange-600", bg: "bg-orange-50", category: "Performance", link: "/progresspage" },
     { label: "Day Streak", value: "7", sub: "Keep it up! 🔥", icon: Flame, color: "text-red-600", bg: "bg-red-50", category: "Current" },
     { label: "Role", value: (user.role || 'Student').toUpperCase(), sub: user.course || "BSMS", icon: User, color: "text-blue-600", bg: "bg-blue-50", category: "Account" },
@@ -62,7 +62,7 @@ const Dashboard = () => {
 
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center bg-[#FDFCFB]">
-      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-teal-600"></div>
+      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-900"></div>
     </div>
   );
 
@@ -71,7 +71,7 @@ const Dashboard = () => {
       {/* SIDEBAR */}
       <aside className={`${isSidebarOpen ? 'w-64' : 'w-20'} bg-[#0F172A] text-white transition-all duration-300 flex flex-col fixed h-full z-50`}>
         <div className="p-6 flex items-center justify-between">
-          {isSidebarOpen && <motion.h1 initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-xl font-serif font-bold tracking-tight text-teal-400">Siddha-Veda</motion.h1>}
+          {isSidebarOpen && <motion.h1 initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-xl font-serif font-bold tracking-tight text-blue-400">Siddha-Veda</motion.h1>}
           <button onClick={() => setSidebarOpen(!isSidebarOpen)} className="p-1 hover:bg-slate-800 rounded-md">
             {isSidebarOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
@@ -123,7 +123,7 @@ const Dashboard = () => {
               whileHover={{ y: -5 }}
               key={idx}
               onClick={() => stat.link && navigate(stat.link)}
-              className={`bg-white p-6 rounded-2xl border border-gray-100 shadow-sm transition-all ${stat.link ? 'cursor-pointer hover:border-teal-200' : ''}`}
+              className={`bg-white p-6 rounded-2xl border border-gray-100 shadow-sm transition-all ${stat.link ? 'cursor-pointer hover:border-blue-200' : ''}`}
             >
               <div className="flex items-center justify-between mb-4">
                 <div className={`p-3 rounded-xl ${stat.bg} ${stat.color}`}><stat.icon size={24} /></div>
@@ -131,7 +131,7 @@ const Dashboard = () => {
               </div>
               <h3 className="text-3xl font-bold mb-1">{stat.value}</h3>
               <p className="text-sm font-medium text-gray-500">{stat.label}</p>
-              {stat.link && <p className="text-xs text-teal-600 mt-2 font-bold flex items-center gap-1">View Analytics →</p>}
+              {stat.link && <p className="text-xs text-blue-900 mt-2 font-bold flex items-center gap-1">View Analytics →</p>}
             </motion.div>
           ))}
         </div>
@@ -143,18 +143,18 @@ const Dashboard = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               <motion.div
                 whileHover={{ y: -5 }}
-                className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm transition-all hover:border-[rgb(13,148,136)]/20 cursor-pointer group"
+                className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm transition-all hover:border-[#0F172A]/20 cursor-pointer group"
                 onClick={() => navigate('/create-test')}
               >
                 <div className="flex justify-between items-start mb-4">
-                  <div className="p-3 rounded-xl bg-[rgb(13,148,136)]/5 text-[rgb(13,148,136)]">
+                  <div className="p-3 rounded-xl bg-[#0F172A]/5 text-[#0F172A]">
                     <FileText size={24} />
                   </div>
                   <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Assessment</span>
                 </div>
-                <h3 className="text-xl font-bold text-slate-900 mb-2 group-hover:text-[rgb(13,148,136)] transition-colors">Assign New Test</h3>
+                <h3 className="text-xl font-bold text-slate-900 mb-2 group-hover:text-[#0F172A] transition-colors">Assign New Test</h3>
                 <p className="text-sm text-gray-500 mb-6">Create questions, set topics, and define marking schemes for students.</p>
-                <div className="flex items-center text-[rgb(13,148,136)] font-bold text-sm gap-2">
+                <div className="flex items-center text-[#1e3a8a] font-bold text-sm gap-2">
                   Create Test <ArrowRight size={16} />
                 </div>
               </motion.div>
@@ -169,7 +169,7 @@ const Dashboard = () => {
             <div className="relative group">
               <select
                 onChange={(e) => setSelectedSubject(e.target.value)}
-                className="appearance-none bg-white border border-gray-200 rounded-lg px-4 py-2 pr-10 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-teal-500/20 cursor-pointer"
+                className="appearance-none bg-white border border-gray-200 rounded-lg px-4 py-2 pr-10 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-900/20 cursor-pointer"
               >
                 <option>All Subjects</option>
                 <option>Noi Naadal</option>
@@ -193,21 +193,21 @@ const Dashboard = () => {
                   className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm relative overflow-hidden group"
                 >
                   <div className="flex justify-between items-start mb-6">
-                    <span className={`bg-teal-600 text-white text-[11px] font-bold px-3 py-1 rounded-full uppercase tracking-wider`}>
+                    <span className={`bg-[#0F172A] text-white text-[11px] font-bold px-3 py-1 rounded-full uppercase tracking-wider`}>
                       {exam.subject}
                     </span>
                     <Calendar className="text-gray-300" size={20} />
                   </div>
-                  <h4 className="text-xl font-bold text-slate-900 mb-4 group-hover:text-teal-600 transition-colors">{exam.title}</h4>
+                  <h4 className="text-xl font-bold text-slate-900 mb-4 group-hover:text-blue-900 transition-colors">{exam.title}</h4>
                   <div className="flex flex-wrap gap-y-2 gap-x-6 text-sm text-gray-500 mb-8">
-                    <div className="flex items-center gap-2"><Calendar size={16} className="text-teal-500" /> {new Date(exam.createdAt).toLocaleDateString()}</div>
-                    <div className="flex items-center gap-2"><Clock size={16} className="text-teal-500" /> 20 mins</div>
+                    <div className="flex items-center gap-2"><Calendar size={16} className="text-blue-700" /> {new Date(exam.createdAt).toLocaleDateString()}</div>
+                    <div className="flex items-center gap-2"><Clock size={16} className="text-blue-700" /> 20 mins</div>
                     <div className="text-gray-400 font-medium">{exam.questionsCount || 0} questions • {exam.difficulty}</div>
                   </div>
                   <motion.button
                     whileTap={{ scale: 0.95 }}
                     onClick={() => navigate(`/test/${exam._id}`)}
-                    className="w-full bg-[#0D9488] hover:bg-[#0A756C] text-white font-bold py-4 rounded-xl shadow-lg"
+                    className="w-full bg-[#0F172A] hover:bg-[#1e293b] text-white font-bold py-4 rounded-xl shadow-lg"
                   >
                     Start Test
                   </motion.button>
@@ -222,7 +222,7 @@ const Dashboard = () => {
           <h3 className="text-xl font-bold text-gray-900 mb-6">Consistency Streak</h3>
           <div className="grid grid-flow-col grid-rows-7 gap-[12px] w-max overflow-x-auto">
             {activityData.map((level, i) => (
-              <div key={i} className={`w-[18px] h-[18px] rounded-[2px] ${level === 0 ? 'bg-gray-100' : level === 1 ? 'bg-teal-100' : level === 2 ? 'bg-teal-300' : 'bg-teal-600'}`} />
+              <div key={i} className={`w-[18px] h-[18px] rounded-[2px] ${level === 0 ? 'bg-gray-100' : level === 1 ? 'bg-blue-100' : level === 2 ? 'bg-blue-300' : 'bg-[#0F172A]'}`} />
             ))}
           </div>
         </section>
@@ -234,7 +234,7 @@ const Dashboard = () => {
 const NavItem = ({ icon, label, active = false, isOpen, onClick }) => (
   <button
     onClick={onClick}
-    className={`flex items-center gap-4 px-4 py-3 rounded-xl w-full transition-all ${active ? 'bg-teal-600 text-white shadow-lg shadow-teal-900/20' : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+    className={`flex items-center gap-4 px-4 py-3 rounded-xl w-full transition-all ${active ? 'bg-blue-800 text-white shadow-lg shadow-blue-900/20' : 'text-slate-400 hover:bg-slate-800 hover:text-white'
       }`}
   >
     {icon} {isOpen && <span className="font-medium whitespace-nowrap">{label}</span>}

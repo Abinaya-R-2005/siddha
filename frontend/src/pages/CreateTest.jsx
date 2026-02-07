@@ -111,7 +111,7 @@ const CreateTest = () => {
             >
                 <button
                     onClick={() => step === 1 ? navigate('/dashboard') : setStep(1)}
-                    className="flex items-center gap-2 text-gray-500 hover:text-[rgb(13,148,136)] transition-colors mb-8"
+                    className="flex items-center gap-2 text-gray-500 hover:text-[#0F172A] transition-colors mb-8"
                 >
                     <ArrowLeft size={20} />
                     <span>{step === 1 ? 'Back to Dashboard' : 'Back to Test Details'}</span>
@@ -119,7 +119,7 @@ const CreateTest = () => {
 
                 <div className="bg-white rounded-3xl p-8 md:p-10 shadow-xl border border-gray-100">
                     <div className="mb-8">
-                        <h1 className="text-3xl font-serif font-bold text-[rgb(13,148,136)] mb-2">
+                        <h1 className="text-3xl font-serif font-bold text-[#0F172A] mb-2">
                             {step === 1 ? 'Assign New Test' : 'Review Generated Questions'}
                         </h1>
                         <p className="text-gray-500">
@@ -170,7 +170,7 @@ const CreateTest = () => {
                                         onChange={handleChange}
                                         className="sr-only peer"
                                     />
-                                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-[rgb(13,148,136)]/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[rgb(13,148,136)]"></div>
+                                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-[#0F172A]/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#0F172A]"></div>
                                 </label>
                             </div>
 
@@ -178,7 +178,7 @@ const CreateTest = () => {
                                 <Button
                                     onClick={generateQuestions}
                                     disabled={loading || !formData.topic || !formData.questionCount}
-                                    className="w-full !bg-[rgb(13,148,136)] !hover:bg-[rgb(10,120,110)] !shadow-[rgb(13,148,136)]/20 flex justify-center items-center gap-2"
+                                    className="w-full !bg-[#0F172A] !hover:bg-[#1e293b] !shadow-[#0F172A]/20 flex justify-center items-center gap-2"
                                 >
                                     {loading ? (
                                         <>
@@ -199,7 +199,7 @@ const CreateTest = () => {
                             {questions.map((q, qIdx) => (
                                 <div key={q.id} className="p-6 rounded-2xl bg-gray-50 border border-gray-200">
                                     <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-                                        <span className="flex items-center justify-center w-8 h-8 rounded-full bg-[rgb(13,148,136)] text-white text-sm">
+                                        <span className="flex items-center justify-center w-8 h-8 rounded-full bg-[#0F172A] text-white text-sm">
                                             {qIdx + 1}
                                         </span>
                                         Question Text
@@ -207,7 +207,7 @@ const CreateTest = () => {
                                     <textarea
                                         value={q.question}
                                         onChange={(e) => handleQuestionChange(qIdx, 'question', e.target.value)}
-                                        className="w-full p-4 rounded-xl border-2 border-gray-200 focus:border-[rgb(13,148,136)] focus:ring-4 focus:ring-[rgb(13,148,136)]/10 outline-none transition-all mb-6"
+                                        className="w-full p-4 rounded-xl border-2 border-gray-200 focus:border-[#0F172A] focus:ring-4 focus:ring-[#0F172A]/10 outline-none transition-all mb-6"
                                         rows="2"
                                         required
                                     />
@@ -222,13 +222,13 @@ const CreateTest = () => {
                                                     type="text"
                                                     value={opt}
                                                     onChange={(e) => handleOptionChange(qIdx, oIdx, e.target.value)}
-                                                    className={`w-full pl-10 p-3 rounded-xl border-2 outline-none transition-all ${q.correctAnswer == oIdx ? 'border-[rgb(13,148,136)] bg-[rgb(13,148,136)]/5' : 'border-gray-200 focus:border-gray-300'}`}
+                                                    className={`w-full pl-10 p-3 rounded-xl border-2 outline-none transition-all ${q.correctAnswer == oIdx ? 'border-[#0F172A] bg-[#0F172A]/5' : 'border-gray-200 focus:border-gray-300'}`}
                                                     required
                                                 />
                                                 <button
                                                     type="button"
                                                     onClick={() => handleQuestionChange(qIdx, 'correctAnswer', oIdx)}
-                                                    className={`absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full transition-colors ${q.correctAnswer == oIdx ? 'text-[rgb(13,148,136)]' : 'text-gray-300 hover:text-gray-400'}`}
+                                                    className={`absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full transition-colors ${q.correctAnswer == oIdx ? 'text-[#0F172A]' : 'text-gray-300 hover:text-gray-400'}`}
                                                 >
                                                     <Check size={20} />
                                                 </button>
@@ -248,7 +248,7 @@ const CreateTest = () => {
                                 </Button>
                                 <Button
                                     type="submit"
-                                    className="flex-2 w-full !bg-[rgb(13,148,136)] !hover:bg-[rgb(10,120,110)] !shadow-[rgb(13,148,136)]/20"
+                                    className="flex-2 w-full !bg-[#0F172A] !hover:bg-[#1e293b] !shadow-[#0F172A]/20"
                                 >
                                     <Save size={20} />
                                     <span>Publish Test</span>
