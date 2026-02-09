@@ -117,6 +117,15 @@ const verifyAdmin = (req, res, next) => {
     });
 };
 
+const verifyEducator = (req, res, next) => {
+    verifyToken(req, res, () => {
+        if (req.user.role !== 'admin' && req.user.role !== 'faculty') {
+            return res.status(403).json({ message: 'Access denied: Educators only' });
+        }
+        next();
+    });
+};
+
 // --- ROUTES ---
 
 // 1. Auth & Profile
@@ -212,14 +221,14 @@ app.get('/api/admin/users', verifyAdmin, async (req, res) => {
 });
 
 // 3. Question Bank Management
-app.get('/api/admin/question-banks', verifyAdmin, async (req, res) => {
+app.get('/api/admin/question-banks', verifyEducator, async (req, res) => {
     try {
         const banks = await QuestionBank.find().sort({ createdAt: -1 });
         res.json(banks);
     } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
-app.post('/api/admin/question-banks', verifyAdmin, upload.array('files', 10), async (req, res) => {
+app.post('/api/admin/question-banks', verifyEducator, upload.array('files', 10), async (req, res) => {
     try {
         let questions = [];
         let questionsCount = 0;
@@ -249,7 +258,7 @@ app.post('/api/admin/question-banks', verifyAdmin, upload.array('files', 10), as
     } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
-app.delete('/api/admin/question-banks/:id', verifyAdmin, async (req, res) => {
+app.delete('/api/admin/question-banks/:id', verifyEducator, async (req, res) => {
     try {
         const bank = await QuestionBank.findById(req.params.id);
 

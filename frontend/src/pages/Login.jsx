@@ -31,6 +31,8 @@ const Login = () => {
 
             if (user.role === 'admin') {
                 navigate('/admin');
+            } else if (user.role === 'student') {
+                navigate('/student-home');
             } else {
                 navigate('/dashboard');
             }
@@ -56,7 +58,7 @@ const Login = () => {
                     <button
                         onClick={() => handleRoleChange('faculty')}
                         className={`flex items-center gap-2 px-6 py-4 rounded-xl transition-all duration-300 ${role === 'faculty'
-                            ? 'bg-[#0A1629] text-white shadow-lg font-bold'
+                            ? 'bg-[#0F172A] text-white shadow-lg font-bold'
                             : 'text-gray-500 hover:text-gray-700'
                             }`}
                     >
@@ -96,15 +98,15 @@ const Login = () => {
 
                     <div className="flex items-center justify-between text-sm mb-8">
                         <label className="flex items-center text-gray-600 cursor-pointer">
-                            <input type="checkbox" className="mr-2 w-4 h-4 rounded border-gray-300 text-[#0A1629] focus:ring-[#0A1629]/20" />
+                            <input type="checkbox" className="mr-2 w-4 h-4 rounded border-gray-300 text-[#0F172A] focus:ring-[#0F172A]/20" />
                             Remember me
                         </label>
-                        <button type="button" className="font-semibold text-[#0A1629] hover:text-[#060e1a] transition-colors">
+                        <button type="button" className="font-semibold text-[#0F172A] hover:text-[#1e293b] transition-colors">
                             Forgot password?
                         </button>
                     </div>
 
-                    <Button type="submit" className="w-full !bg-[#0A1629] !hover:bg-[#060e1a] !shadow-[#0A1629]/20">
+                    <Button type="submit" className="w-full !bg-[#0F172A] !hover:bg-[#1e293b] !shadow-[#0F172A]/20">
                         Sign In
                     </Button>
 
@@ -112,7 +114,7 @@ const Login = () => {
                         Don't have an account?{' '}
                         <Link
                             to={`/register/${role}`}
-                            className="text-[#0A1629] hover:underline font-bold"
+                            className="text-[#0F172A] hover:underline font-bold"
                         >
                             Request Access
                         </Link>

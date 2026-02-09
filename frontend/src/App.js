@@ -9,18 +9,22 @@ import AdminDashboard from './admin/AdminDashboard';
 import ProfilePage from './pages/ProfilePage';
 import ProgressPage from './pages/ProgressPage';
 import TestPage from './pages/TestPage';
+import Home from './pages/Home';
+import StudentHome from './pages/StudentHome';
 
 function App() {
   return (
     <Router>
       <Routes>
-        {/* Default Route: Redirects to Login */}
-        <Route path="/" element={<Navigate to="/login" replace />} />
+        <Route path="/" element={<Home />} />
 
         {/* Auth Routes */}
         <Route path="/login" element={<Login />} />
         <Route path="/register/student" element={<StudentRegister />} />
         <Route path="/register/faculty" element={<FacultyRegister />} />
+
+        {/* Student Home Route */}
+        <Route path="/student-home" element={<StudentHome />} />
 
         {/* Protected Dashboard Route */}
         <Route path="/dashboard" element={<Dashboard />} />
@@ -29,6 +33,7 @@ function App() {
         <Route path="/profilepage" element={<ProfilePage />} />
         <Route path="/progresspage" element={<ProgressPage />} />
         <Route path="/test/:id" element={<TestPage />} />
+
         {/* Catch-all: Redirect unknown URLs back to login */}
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>

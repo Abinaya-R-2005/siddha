@@ -34,7 +34,7 @@ const StudentRegister = () => {
                 role: 'student'
             });
             localStorage.setItem('token', response.data.token);
-            navigate('/dashboard');
+            navigate('/student-home');
         } catch (err) {
             alert(err.response?.data?.message || 'Registration failed');
         }
@@ -131,7 +131,7 @@ const StudentRegister = () => {
                 <div className="flex items-center justify-between relative">
                     <div className="absolute left-0 top-1/2 transform -translate-y-1/2 w-full h-1 bg-gray-200 -z-10" />
                     <div
-                        className="absolute left-0 top-1/2 transform -translate-y-1/2 h-1 bg-[#0A1629] transition-all duration-300 -z-10"
+                        className="absolute left-0 top-1/2 transform -translate-y-1/2 h-1 bg-[#0F172A] transition-all duration-300 -z-10"
                         style={{ width: `${((currentStep - 1) / (steps.length - 1)) * 100}%` }}
                     />
 
@@ -146,14 +146,14 @@ const StudentRegister = () => {
                                     initial={false}
                                     animate={{
                                         scale: isActive ? 1.2 : 1,
-                                        backgroundColor: isActive || isCompleted ? '#0A1629' : '#fff',
-                                        borderColor: isActive || isCompleted ? '#0A1629' : '#e5e7eb'
+                                        backgroundColor: isActive || isCompleted ? '#0F172A' : '#fff',
+                                        borderColor: isActive || isCompleted ? '#0F172A' : '#e5e7eb'
                                     }}
                                     className={`w-10 h-10 rounded-full border-2 flex items-center justify-center z-10 transition-colors duration-300 ${isActive || isCompleted ? 'text-white' : 'text-gray-400'}`}
                                 >
                                     {isCompleted ? <Check size={20} /> : <Icon size={20} />}
                                 </motion.div>
-                                <span className={`text-xs font-semibold ${isActive ? 'text-[#0A1629]' : 'text-gray-400'}`}>
+                                <span className={`text-xs font-semibold ${isActive ? 'text-[#0F172A]' : 'text-gray-400'}`}>
                                     {step.title}
                                 </span>
                             </div>
@@ -184,11 +184,11 @@ const StudentRegister = () => {
                     )}
 
                     {currentStep < steps.length ? (
-                        <Button onClick={nextStep} className="flex-1 !bg-[#0A1629] !hover:bg-[#060e1a] !shadow-[#0A1629]/20">
+                        <Button onClick={nextStep} className="flex-1 !bg-[#0F172A] !hover:bg-[#1e293b] !shadow-[#0F172A]/20">
                             Next <ChevronRight size={20} />
                         </Button>
                     ) : (
-                        <Button type="submit" className="flex-1 !bg-[#0A1629] !hover:bg-[#060e1a] !shadow-[#0A1629]/20">
+                        <Button type="submit" className="flex-1 !bg-[#0F172A] !hover:bg-[#1e293b] !shadow-[#0F172A]/20">
                             Complete Registration <Check size={20} />
                         </Button>
                     )}
@@ -197,7 +197,7 @@ const StudentRegister = () => {
 
             <div className="text-center mt-6">
                 <p className="text-sm text-gray-500">
-                    Already have an account? <Link to="/login/student" className="text-[#0A1629] font-medium hover:underline">Sign in</Link>
+                    Already have an account? <Link to="/login/student" className="text-[#0F172A] font-medium hover:underline">Sign in</Link>
                 </p>
             </div>
         </AuthLayout>
