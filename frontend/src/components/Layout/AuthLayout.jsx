@@ -18,8 +18,19 @@ const AuthLayout = ({ children }) => {
                     transition={{ duration: 0.8, ease: "easeOut" }}
                     className="relative z-10"
                 >
+     <motion.div
+    initial={{ opacity: 0, x: -30 }}
+    animate={{ opacity: 1, x: 0 }}
+    transition={{ duration: 0.8, ease: "easeOut" }}
+    className="relative z-10"
+>
+    
+
+    
+    <div className="mt-12 h-1 w-24 bg-gradient-to-r from-cyan-500 to-transparent rounded-full" />
+</motion.div>
                     <h1 className="text-5xl lg:text-6xl font-serif font-bold mb-6 leading-tight">
-                        Siddha-Veda Intelligence
+                        JCL Siddha Academy
                     </h1>
                     <p className="text-xl lg:text-2xl text-blue-200 font-light max-w-md">
                         The Modern Archive of Ancient Wisdom

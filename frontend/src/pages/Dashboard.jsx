@@ -76,16 +76,62 @@ const Dashboard = () => {
 
   return (
     <div className="flex min-h-screen bg-[#FDFCFB] font-sans text-slate-900">
-      {/* SIDEBAR */}
-      <aside className={`${isSidebarOpen ? 'w-64' : 'w-20'} bg-[#0F172A] text-white transition-all duration-300 flex flex-col fixed h-full z-50`}>
-        <div className="p-6 flex items-center justify-between">
-          {isSidebarOpen && <motion.h1 initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-xl font-serif font-bold tracking-tight text-blue-400">Siddha-Veda</motion.h1>}
-          <button onClick={() => setSidebarOpen(!isSidebarOpen)} className="p-1 hover:bg-slate-800 rounded-md">
-            {isSidebarOpen ? <X size={20} /> : <Menu size={20} />}
-          </button>
+      
+      {/* SIDEBAR - Fixed width logic (w-64 vs w-24) */}
+      <aside className={`${isSidebarOpen ? 'w-64' : 'w-24'} bg-[#0F172A] text-white transition-all duration-300 flex flex-col fixed h-full z-50 shadow-2xl overflow-hidden`}>
+        
+        {/* LOGO & BRANDING SECTION */}
+        <div className="p-4 mb-4 flex flex-col items-center">
+          <div className={`w-full flex items-center transition-all duration-300 ${isSidebarOpen ? 'justify-between mb-2' : 'justify-center'}`}>
+            
+            {/* White Logo Container to make the logo visible against dark blue */}
+            <div className={`bg-white p-1.5 rounded-xl shadow-md transition-all duration-300 ${isSidebarOpen ? 'h-12 w-12' : 'h-14 w-14'}`}>
+              <img 
+                src="/LOGO.jpeg" 
+                alt="JCL Logo" 
+                className="h-full w-full object-contain" 
+              />
+            </div>
+
+            {isSidebarOpen && (
+              <button onClick={() => setSidebarOpen(false)} className="p-2 hover:bg-slate-800 rounded-lg text-slate-400">
+                <X size={20} />
+              </button>
+            )}
+          </div>
+
+          {/* Brand Name - Only visible when sidebar is open */}
+          <AnimatePresence>
+            {isSidebarOpen && (
+              <motion.div 
+                initial={{ opacity: 0, x: -10 }} 
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0 }}
+                className="w-full text-left mt-2 px-2"
+              >
+                <span className="text-lg font-serif font-bold tracking-tight text-white leading-tight block">
+                  JCL Siddha
+                </span>
+                <span className="text-[10px] font-sans text-blue-400 font-bold uppercase tracking-widest">
+                  Academy
+                </span>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Collapsed Menu Toggle */}
+          {!isSidebarOpen && (
+            <button 
+              onClick={() => setSidebarOpen(true)} 
+              className="mt-6 p-3 hover:bg-slate-800 rounded-xl text-slate-400 transition-colors"
+            >
+              <Menu size={24} />
+            </button>
+          )}
         </div>
 
-        <nav className="flex-1 mt-4 px-4 space-y-2">
+        {/* NAVIGATION */}
+        <nav className="flex-1 mt-4 px-4 space-y-3">
           <NavItem
             icon={<LayoutDashboard size={20} />}
             label="Dashboard"
@@ -107,16 +153,20 @@ const Dashboard = () => {
           />
         </nav>
 
+        {/* LOGOUT */}
         <div className="p-4 border-t border-slate-800">
-          <button onClick={() => { localStorage.removeItem('token'); navigate('/login'); }} className="flex items-center gap-4 px-4 py-3 w-full text-slate-400 hover:text-white transition-colors hover:bg-red-500/10 rounded-xl">
+          <button 
+            onClick={() => { localStorage.removeItem('token'); navigate('/login'); }} 
+            className="flex items-center gap-4 px-4 py-3 w-full text-slate-400 hover:text-white transition-colors hover:bg-red-500/10 rounded-xl"
+          >
             <LogOut size={20} />
             {isSidebarOpen && <span className="font-medium">Logout</span>}
           </button>
         </div>
       </aside>
 
-      {/* MAIN CONTENT AREA */}
-      <main className={`flex-1 transition-all duration-300 ${isSidebarOpen ? 'ml-64' : 'ml-20'} p-8 md:p-12`}>
+      {/* MAIN CONTENT AREA - Matches Sidebar Margin */}
+      <main className={`flex-1 transition-all duration-300 ${isSidebarOpen ? 'ml-64' : 'ml-24'} p-8 md:p-12`}>
         <header className="mb-12 flex justify-between items-end">
           <div>
             <h2 className="text-4xl font-serif font-bold text-gray-900 mb-2">Welcome back, {user.fullName}</h2>
@@ -180,15 +230,9 @@ const Dashboard = () => {
                 className="appearance-none bg-white border border-gray-200 rounded-lg px-4 py-2 pr-10 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-900/20 cursor-pointer"
               >
                 <option>All Subjects</option>
-                {subjects.length > 0 ? subjects.map((s) => (
+                {subjects.map((s) => (
                   <option key={s._id || s.name} value={s.name}>{s.name}</option>
-                )) : (
-                  <>
-                    <option>Noi Naadal</option>
-                    <option>Maruthuvam</option>
-                    <option>Gunapadam</option>
-                  </>
-                )}
+                ))}
               </select>
               <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
             </div>
@@ -207,7 +251,7 @@ const Dashboard = () => {
                   className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm relative overflow-hidden group"
                 >
                   <div className="flex justify-between items-start mb-6">
-                    <span className={`bg-[#0F172A] text-white text-[11px] font-bold px-3 py-1 rounded-full uppercase tracking-wider`}>
+                    <span className="bg-[#0F172A] text-white text-[11px] font-bold px-3 py-1 rounded-full uppercase tracking-wider">
                       {exam.subject}
                     </span>
                     <Calendar className="text-gray-300" size={20} />
@@ -248,10 +292,12 @@ const Dashboard = () => {
 const NavItem = ({ icon, label, active = false, isOpen, onClick }) => (
   <button
     onClick={onClick}
-    className={`flex items-center gap-4 px-4 py-3 rounded-xl w-full transition-all ${active ? 'bg-blue-800 text-white shadow-lg shadow-blue-900/20' : 'text-slate-400 hover:bg-slate-800 hover:text-white'
-      }`}
+    className={`flex items-center gap-4 px-4 py-3 rounded-xl w-full transition-all ${
+      active ? 'bg-blue-800 text-white shadow-lg shadow-blue-900/20' : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+    }`}
   >
-    {icon} {isOpen && <span className="font-medium whitespace-nowrap">{label}</span>}
+    <div className={`${!isOpen ? 'w-full flex justify-center' : ''}`}>{icon}</div>
+    {isOpen && <span className="font-medium whitespace-nowrap">{label}</span>}
   </button>
 );
 
