@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
-    LayoutDashboard, Users,
-    LogOut, Search,
-    TrendingUp, Calendar, FileText, ChevronDown, Trash2, Edit, Download, Upload, X, Check, Book
+    TrendingUp, Calendar, FileText, ChevronDown, Trash2, Edit, Download, Upload, X, Check, Search, Users
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useCallback } from 'react';
@@ -10,6 +8,7 @@ import axios from 'axios';
 import {
     BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts';
+import AdminLayout from '../components/Layout/AdminLayout';
 
 const AdminDashboard = () => {
     const [activeTab, setActiveTab] = useState('Overview');
@@ -163,56 +162,11 @@ const AdminDashboard = () => {
     };
 
     return (
-        <div className="flex min-h-screen bg-[#FDFCFB] font-sans relative">
-            {/* Sidebar */}
-            <aside className="w-64 bg-[#0F172A] text-white flex flex-col fixed h-full z-50">
-                <div className="p-8">
-                    <h1 className="text-xl font-serif font-bold text-white tracking-tight">Admin Portal</h1>
-                </div>
-
-                <nav className="flex-1 px-4 space-y-2">
-                    <NavItem
-                        icon={<LayoutDashboard size={20} />}
-                        label="Overview"
-                        active={activeTab === 'Overview'}
-                        onClick={() => setActiveTab('Overview')}
-                    />
-                    <NavItem
-                        icon={<FileText size={20} />}
-                        label="Question Vault"
-                        active={activeTab === 'Question Vault'}
-                        onClick={() => setActiveTab('Question Vault')}
-                    />
-                    <NavItem
-                        icon={<Users size={20} />}
-                        label="Students"
-                        active={activeTab === 'Students'}
-                        onClick={() => setActiveTab('Students')}
-                    />
-                    <NavItem
-                        icon={<Book size={20} />}
-                        label="Subjects"
-                        active={activeTab === 'Subjects'}
-                        onClick={() => setActiveTab('Subjects')}
-                    />
-                </nav>
-
-                <div className="p-8">
-                    <button
-                        onClick={handleLogout}
-                        className="flex items-center gap-3 text-slate-400 hover:text-white transition-all"
-                    >
-                        <LogOut size={20} />
-                        <span className="font-medium text-sm">Logout</span>
-                    </button>
-                </div>
-            </aside>
-
-            {/* Main Content */}
-            <main className="flex-1 ml-64 p-12">
+        <AdminLayout activeTab={activeTab} setActiveTab={setActiveTab}>
+            <div className="p-4 md:p-8 lg:p-12">
 
                 {/* Header for all pages */}
-                <header className="flex justify-between items-start mb-10">
+                <header className="flex flex-col md:flex-row justify-between items-start mb-8 lg:mb-10 gap-6">
                     <div>
                         {activeTab === 'Overview' && (
                             <>
@@ -228,26 +182,26 @@ const AdminDashboard = () => {
                         )}
                         {activeTab === 'Students' && (
                             <>
-                                <h2 className="text-4xl font-serif font-bold text-[#0F172A] mb-2">Student Management</h2>
-                                <p className="text-slate-500">Track individual student progress</p>
+                                <h2 className="text-2xl md:text-3xl lg:text-4xl font-serif font-bold text-[#0F172A] mb-1 md:mb-2">Student Management</h2>
+                                <p className="text-slate-500 text-sm md:text-base">Track individual student progress</p>
                             </>
                         )}
                     </div>
 
-                    <div className="flex gap-4">
+                    <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
                         {activeTab === 'Question Vault' && (
                             <button
                                 onClick={() => setIsUploadModalOpen(true)}
-                                className="bg-[#C2410C] hover:bg-[#9a3412] text-white px-4 py-2 rounded-lg font-semibold text-sm flex items-center gap-2 transition-colors shadow-lg shadow-orange-900/10"
+                                className="w-full sm:w-auto bg-[#C2410C] hover:bg-[#9a3412] text-white px-4 py-2.5 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-colors shadow-lg shadow-orange-900/10"
                             >
                                 <Upload size={16} /> Upload New
                             </button>
                         )}
-                        <div className="relative w-48 bg-white border border-slate-200 rounded-lg">
+                        <div className="relative w-full sm:w-48 bg-white border border-slate-200 rounded-xl overflow-hidden">
                             <select
                                 value={selectedSubject}
                                 onChange={(e) => setSelectedSubject(e.target.value)}
-                                className="w-full px-4 py-2 text-sm font-semibold text-gray-700 bg-transparent appearance-none focus:outline-none cursor-pointer"
+                                className="w-full px-4 py-2.5 text-sm font-semibold text-gray-700 bg-transparent appearance-none focus:outline-none cursor-pointer"
                             >
                                 <option>All Subjects</option>
                                 {subjects.length > 0 ? subjects.map(s => (
@@ -268,7 +222,7 @@ const AdminDashboard = () => {
                 {activeTab === 'Overview' && (
                     <div className="space-y-12">
                         {/* Stats Cards */}
-                        <div className="grid grid-cols-4 gap-8">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8">
                             <OverviewCard icon={<Users size={24} className="text-blue-500" />} value={stats.totalStudents} label="Total Students" />
                             <OverviewCard icon={<FileText size={24} className="text-teal-500" />} value={stats.totalTests} label="Total Tests" />
                             <OverviewCard icon={<TrendingUp size={24} className="text-orange-500" />} value={`${stats.globalAverage}%`} label="Global Average" />
@@ -276,7 +230,7 @@ const AdminDashboard = () => {
                         </div>
 
                         {/* Charts */}
-                        <div className="grid grid-cols-2 gap-12">
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
                             <div>
                                 <h3 className="text-xl font-serif font-bold text-gray-800 mb-6">Subject Mastery</h3>
                                 <div className="h-64">
@@ -371,8 +325,8 @@ const AdminDashboard = () => {
                             </div>
                         </div>
 
-                        <div className="bg-white rounded-xl border border-slate-100 overflow-hidden">
-                            <table className="w-full text-left">
+                        <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden overflow-x-auto">
+                            <table className="w-full text-left min-w-[800px] md:min-w-full">
                                 <thead className="bg-slate-50 text-xs font-bold text-slate-500 uppercase tracking-wider">
                                     <tr>
                                         <th className="px-6 py-4">Student</th>
@@ -480,48 +434,36 @@ const AdminDashboard = () => {
                         )}
                     </div>
                 )}
-            </main>
 
-            {/* Upload Modal */}
-            {isUploadModalOpen && (
-                <UploadModal
-                    onClose={() => setIsUploadModalOpen(false)}
-                    onSuccess={handleUploadSuccess}
-                    onAuthError={handleLogout}
-                    subjects={subjects}
-                />
-            )}
-            {editingBank && (
-                <EditModal
-                    bank={editingBank}
-                    onClose={() => setEditingBank(null)}
-                    onSuccess={handleUploadSuccess}
-                    subjects={subjects}
-                />
-            )}
-            {selectedStudent && (
-                <StudentDetailsModal
-                    student={selectedStudent}
-                    onClose={() => setSelectedStudent(null)}
-                />
-            )}
-        </div>
+                {/* Modals */}
+                {isUploadModalOpen && (
+                    <UploadModal
+                        onClose={() => setIsUploadModalOpen(false)}
+                        onSuccess={handleUploadSuccess}
+                        onAuthError={handleLogout}
+                        subjects={subjects}
+                    />
+                )}
+                {editingBank && (
+                    <EditModal
+                        bank={editingBank}
+                        onClose={() => setEditingBank(null)}
+                        onSuccess={handleUploadSuccess}
+                        subjects={subjects}
+                    />
+                )}
+                {selectedStudent && (
+                    <StudentDetailsModal
+                        student={selectedStudent}
+                        onClose={() => setSelectedStudent(null)}
+                    />
+                )}
+            </div>
+        </AdminLayout>
     );
 };
 
 // Sub-components
-const NavItem = ({ icon, label, active, onClick }) => (
-    <button
-        onClick={onClick}
-        className={`flex items-center gap-3 px-4 py-3 rounded-lg w-full transition-all text-left mb-1 ${active
-            ? 'bg-[#C2410C] text-white font-bold shadow-lg shadow-orange-900/20'
-            : 'text-slate-400 hover:text-white hover:bg-slate-800'
-            }`}>
-        {icon}
-        <span className="text-sm">{label}</span>
-    </button>
-);
-
 const OverviewCard = ({ icon, value, label }) => (
     <div className="bg-white p-6 rounded-2xl border border-slate-100 flex flex-col items-center text-center hover:shadow-md transition-shadow">
         <div className="mb-4 bg-slate-50 p-3 rounded-xl">{icon}</div>

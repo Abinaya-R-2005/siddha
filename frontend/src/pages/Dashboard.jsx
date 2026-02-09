@@ -2,13 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  LayoutDashboard, BookOpen, LineChart, User,
-  LogOut, Menu, X, Award, Flame, Clock,
+  BookOpen, User, Award, Flame, Clock,
   Calendar, ChevronDown, FileText, ArrowRight
 } from 'lucide-react';
+import DashboardLayout from '../components/Layout/DashboardLayout';
 
 const Dashboard = () => {
-  const [isSidebarOpen, setSidebarOpen] = useState(true);
   const [selectedSubject, setSelectedSubject] = useState('All Subjects');
   const [user, setUser] = useState({ fullName: "Scholar", role: "student" });
   const [exams, setExams] = useState([]);
@@ -75,102 +74,12 @@ const Dashboard = () => {
   );
 
   return (
-    <div className="flex min-h-screen bg-[#FDFCFB] font-sans text-slate-900">
-      
-      {/* SIDEBAR - Fixed width logic (w-64 vs w-24) */}
-      <aside className={`${isSidebarOpen ? 'w-64' : 'w-24'} bg-[#0F172A] text-white transition-all duration-300 flex flex-col fixed h-full z-50 shadow-2xl overflow-hidden`}>
-        
-        {/* LOGO & BRANDING SECTION */}
-        <div className="p-4 mb-4 flex flex-col items-center">
-          <div className={`w-full flex items-center transition-all duration-300 ${isSidebarOpen ? 'justify-between mb-2' : 'justify-center'}`}>
-            
-            {/* White Logo Container to make the logo visible against dark blue */}
-            <div className={`bg-white p-1.5 rounded-xl shadow-md transition-all duration-300 ${isSidebarOpen ? 'h-12 w-12' : 'h-14 w-14'}`}>
-              <img 
-                src="/LOGO.jpeg" 
-                alt="JCL Logo" 
-                className="h-full w-full object-contain" 
-              />
-            </div>
-
-            {isSidebarOpen && (
-              <button onClick={() => setSidebarOpen(false)} className="p-2 hover:bg-slate-800 rounded-lg text-slate-400">
-                <X size={20} />
-              </button>
-            )}
-          </div>
-
-          {/* Brand Name - Only visible when sidebar is open */}
-          <AnimatePresence>
-            {isSidebarOpen && (
-              <motion.div 
-                initial={{ opacity: 0, x: -10 }} 
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0 }}
-                className="w-full text-left mt-2 px-2"
-              >
-                <span className="text-lg font-serif font-bold tracking-tight text-white leading-tight block">
-                  JCL Siddha
-                </span>
-                <span className="text-[10px] font-sans text-blue-400 font-bold uppercase tracking-widest">
-                  Academy
-                </span>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Collapsed Menu Toggle */}
-          {!isSidebarOpen && (
-            <button 
-              onClick={() => setSidebarOpen(true)} 
-              className="mt-6 p-3 hover:bg-slate-800 rounded-xl text-slate-400 transition-colors"
-            >
-              <Menu size={24} />
-            </button>
-          )}
-        </div>
-
-        {/* NAVIGATION */}
-        <nav className="flex-1 mt-4 px-4 space-y-3">
-          <NavItem
-            icon={<LayoutDashboard size={20} />}
-            label="Dashboard"
-            active={window.location.pathname === '/dashboard'}
-            isOpen={isSidebarOpen}
-            onClick={() => navigate('/dashboard')}
-          />
-          <NavItem
-            icon={<LineChart size={20} />}
-            label="Progress"
-            isOpen={isSidebarOpen}
-            onClick={() => navigate('/progresspage')}
-          />
-          <NavItem
-            icon={<User size={20} />}
-            label="Profile"
-            isOpen={isSidebarOpen}
-            onClick={() => navigate('/profilepage')}
-          />
-        </nav>
-
-        {/* LOGOUT */}
-        <div className="p-4 border-t border-slate-800">
-          <button 
-            onClick={() => { localStorage.removeItem('token'); navigate('/login'); }} 
-            className="flex items-center gap-4 px-4 py-3 w-full text-slate-400 hover:text-white transition-colors hover:bg-red-500/10 rounded-xl"
-          >
-            <LogOut size={20} />
-            {isSidebarOpen && <span className="font-medium">Logout</span>}
-          </button>
-        </div>
-      </aside>
-
-      {/* MAIN CONTENT AREA - Matches Sidebar Margin */}
-      <main className={`flex-1 transition-all duration-300 ${isSidebarOpen ? 'ml-64' : 'ml-24'} p-8 md:p-12`}>
-        <header className="mb-12 flex justify-between items-end">
+    <DashboardLayout>
+      <div className="p-4 md:p-8 lg:p-12">
+        <header className="mb-8 lg:mb-12 flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
           <div>
-            <h2 className="text-4xl font-serif font-bold text-gray-900 mb-2">Welcome back, {user.fullName}</h2>
-            <p className="text-gray-500 text-lg">Continue your journey through ancient wisdom</p>
+            <h2 className="text-2xl md:text-3xl lg:text-4xl font-serif font-bold text-gray-900 mb-2">Welcome back, {user.fullName}</h2>
+            <p className="text-gray-500 text-base md:text-lg">Continue your journey through ancient wisdom</p>
           </div>
         </header>
 
@@ -222,12 +131,12 @@ const Dashboard = () => {
 
         {/* UPCOMING EXAMS SECTION */}
         <section className="mb-12">
-          <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
-            <h3 className="text-2xl font-serif font-bold text-slate-800">Available Assessments</h3>
-            <div className="relative group">
+          <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 lg:mb-8 gap-4">
+            <h3 className="text-xl md:text-2xl font-serif font-bold text-slate-800">Available Assessments</h3>
+            <div className="relative group w-full md:w-auto">
               <select
                 onChange={(e) => setSelectedSubject(e.target.value)}
-                className="appearance-none bg-white border border-gray-200 rounded-lg px-4 py-2 pr-10 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-900/20 cursor-pointer"
+                className="w-full md:w-auto appearance-none bg-white border border-gray-200 rounded-lg px-4 py-2 pr-10 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-900/20 cursor-pointer"
               >
                 <option>All Subjects</option>
                 {subjects.map((s) => (
@@ -257,10 +166,10 @@ const Dashboard = () => {
                     <Calendar className="text-gray-300" size={20} />
                   </div>
                   <h4 className="text-xl font-bold text-slate-900 mb-4 group-hover:text-blue-900 transition-colors">{exam.title}</h4>
-                  <div className="flex flex-wrap gap-y-2 gap-x-6 text-sm text-gray-500 mb-8">
+                  <div className="flex flex-wrap gap-y-2 gap-x-4 lg:gap-x-6 text-sm text-gray-500 mb-8">
                     <div className="flex items-center gap-2"><Calendar size={16} className="text-blue-700" /> {new Date(exam.createdAt).toLocaleDateString()}</div>
                     <div className="flex items-center gap-2"><Clock size={16} className="text-blue-700" /> 20 mins</div>
-                    <div className="text-gray-400 font-medium">{exam.questionsCount || 0} questions • {exam.difficulty}</div>
+                    <div className="text-gray-400 font-medium">{exam.questionsCount || 0} Qs • {exam.difficulty}</div>
                   </div>
                   <motion.button
                     whileTap={{ scale: 0.95 }}
@@ -284,21 +193,9 @@ const Dashboard = () => {
             ))}
           </div>
         </section>
-      </main>
-    </div>
+      </div>
+    </DashboardLayout>
   );
 };
-
-const NavItem = ({ icon, label, active = false, isOpen, onClick }) => (
-  <button
-    onClick={onClick}
-    className={`flex items-center gap-4 px-4 py-3 rounded-xl w-full transition-all ${
-      active ? 'bg-blue-800 text-white shadow-lg shadow-blue-900/20' : 'text-slate-400 hover:bg-slate-800 hover:text-white'
-    }`}
-  >
-    <div className={`${!isOpen ? 'w-full flex justify-center' : ''}`}>{icon}</div>
-    {isOpen && <span className="font-medium whitespace-nowrap">{label}</span>}
-  </button>
-);
 
 export default Dashboard;
