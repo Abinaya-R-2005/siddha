@@ -3,9 +3,10 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     ChevronLeft, ChevronRight, CheckCircle2,
-    Clock, AlertCircle, Loader2, Award, Trophy
+    Clock, AlertCircle, Loader2, Trophy
 } from 'lucide-react';
 import axios from 'axios';
+import { useCallback } from 'react';
 
 const TestPage = () => {
     const { id } = useParams();
@@ -16,7 +17,8 @@ const TestPage = () => {
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
     const [result, setResult] = useState(null);
-    const [timeLeft, setTimeLeft] = useState(1200); // 20 mins default
+    const [timeLeft, setTimeLeft] = useState(0);
+    const [examStatus, setExamStatus] = useState('loading'); // 'upcoming', 'active', 'finished'
 
     useEffect(() => {
         const fetchTest = async () => {
@@ -25,10 +27,52 @@ const TestPage = () => {
                 const res = await axios.get(`http://localhost:5000/api/user/tests/${id}`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
-                setTest(res.data);
+                const testData = res.data;
+                setTest(testData);
+
+                // Initial status check
+                const now = new Date();
+                const startTime = testData.startTime ? new Date(testData.startTime) : null;
+                const endTime = testData.endTime ? new Date(testData.endTime) : null;
+
+                if (startTime && endTime) {
+                    const diffToStart = startTime - now;
+                    if (diffToStart > 0) {
+                        setExamStatus('upcoming');
+                        setLoading(false);
+                        return;
+                    }
+
+                    const diffToEnd = endTime - now;
+                    const remaining = Math.floor(diffToEnd / 1000);
+
+                    if (remaining <= 0) {
+                        setExamStatus('finished');
+                        setLoading(false);
+                        return;
+                    }
+
+                    setTimeLeft(remaining);
+                    setExamStatus('active');
+                } else if (endTime) {
+                    // Start time not set (immediate) but has end time
+                    const remaining = Math.floor((endTime - now) / 1000);
+                    if (remaining <= 0) {
+                        setExamStatus('finished');
+                        setLoading(false);
+                        return;
+                    }
+                    setTimeLeft(remaining);
+                    setExamStatus('active');
+                } else {
+                    // No timing constraints
+                    setTimeLeft(3600); // 1 hour default if no end time
+                    setExamStatus('active');
+                }
+
                 // Initialize answers
                 const initialAnswers = {};
-                res.data.questions.forEach((_, idx) => initialAnswers[idx] = null);
+                testData.questions.forEach((_, idx) => initialAnswers[idx] = null);
                 setSelectedAnswers(initialAnswers);
             } catch (err) {
                 console.error("Error fetching test:", err);
@@ -41,27 +85,7 @@ const TestPage = () => {
         fetchTest();
     }, [id, navigate]);
 
-    useEffect(() => {
-        if (!test || result) return;
-        const timer = setInterval(() => {
-            setTimeLeft(prev => {
-                if (prev <= 1) {
-                    clearInterval(timer);
-                    handleSubmit();
-                    return 0;
-                }
-                return prev - 1;
-            });
-        }, 1000);
-        return () => clearInterval(timer);
-    }, [test, result]);
-
-    const handleOptionSelect = (optionIndex) => {
-        if (result) return;
-        setSelectedAnswers({ ...selectedAnswers, [currentQuestion]: optionIndex });
-    };
-
-    const handleSubmit = async () => {
+    const handleSubmit = useCallback(async () => {
         if (submitting) return;
         setSubmitting(true);
         try {
@@ -79,6 +103,26 @@ const TestPage = () => {
         } finally {
             setSubmitting(false);
         }
+    }, [id, submitting, selectedAnswers]);
+
+    useEffect(() => {
+        if (!test || result) return;
+        const timer = setInterval(() => {
+            setTimeLeft(prev => {
+                if (prev <= 1) {
+                    clearInterval(timer);
+                    handleSubmit();
+                    return 0;
+                }
+                return prev - 1;
+            });
+        }, 1000);
+        return () => clearInterval(timer);
+    }, [test, result, handleSubmit]);
+
+    const handleOptionSelect = (optionIndex) => {
+        if (result) return;
+        setSelectedAnswers({ ...selectedAnswers, [currentQuestion]: optionIndex });
     };
 
     const formatTime = (seconds) => {
@@ -86,6 +130,45 @@ const TestPage = () => {
         const s = seconds % 60;
         return `${m}:${s < 10 ? '0' : ''}${s}`;
     };
+
+    if (examStatus === 'upcoming') return (
+        <div className="min-h-screen bg-[#FDFCFB] flex flex-col items-center justify-center p-6 text-center">
+            <div className="bg-white p-8 rounded-3xl shadow-xl border border-slate-100 max-w-md w-full animate-in fade-in zoom-in duration-300">
+                <div className="w-20 h-20 bg-blue-50 rounded-2xl flex items-center justify-center mx-auto mb-6 text-blue-600">
+                    <Clock size={40} />
+                </div>
+                <h1 className="text-2xl font-serif font-bold text-slate-900 mb-2">Exam Not Started</h1>
+                <p className="text-slate-500 mb-6">This exam is scheduled for:</p>
+                <div className="bg-slate-50 p-4 rounded-xl text-lg font-bold text-slate-700 mb-8 border border-slate-100">
+                    {new Date(test.startTime).toLocaleString()}
+                </div>
+                <button
+                    onClick={() => navigate('/dashboard')}
+                    className="w-full py-3 rounded-xl bg-slate-900 text-white font-bold hover:bg-slate-800 transition-colors"
+                >
+                    Back to Dashboard
+                </button>
+            </div>
+        </div>
+    );
+
+    if (examStatus === 'finished') return (
+        <div className="min-h-screen bg-[#FDFCFB] flex flex-col items-center justify-center p-6 text-center">
+            <div className="bg-white p-8 rounded-3xl shadow-xl border border-slate-100 max-w-md w-full animate-in fade-in zoom-in duration-300">
+                <div className="w-20 h-20 bg-red-50 rounded-2xl flex items-center justify-center mx-auto mb-6 text-red-600">
+                    <AlertCircle size={40} />
+                </div>
+                <h1 className="text-2xl font-serif font-bold text-slate-900 mb-2">Exam Finished</h1>
+                <p className="text-slate-500 mb-8">The time window for this examination has closed.</p>
+                <button
+                    onClick={() => navigate('/dashboard')}
+                    className="w-full py-3 rounded-xl bg-slate-900 text-white font-bold hover:bg-slate-800 transition-colors"
+                >
+                    Back to Dashboard
+                </button>
+            </div>
+        </div>
+    );
 
     if (loading) return (
         <div className="min-h-screen bg-[#FDFCFB] flex items-center justify-center">
@@ -212,18 +295,18 @@ const TestPage = () => {
             <main className="flex-1 w-full mx-auto p-0 md:p-0 pb-32 flex h-full">
 
                 {/* PDF/Image Viewer Split */}
-                {test.filename && !test.filename.endsWith('.json') && (
+                {(question.filename || (test.filename && !test.filename.endsWith('.json'))) && (
                     <div className="w-1/2 h-full border-r border-slate-200 bg-slate-100 overflow-hidden relative">
-                        {test.filename.endsWith('.pdf') ? (
+                        {(question.filename?.endsWith('.pdf') || test.filename?.endsWith('.pdf')) ? (
                             <iframe
-                                src={`http://localhost:5000/uploads/${test.filename}`}
+                                src={`http://localhost:5000/uploads/${question.filename || test.filename}`}
                                 className="w-full h-[calc(100vh-160px)]"
                                 title="Question Paper"
                             />
                         ) : (
                             <div className="w-full h-[calc(100vh-160px)] overflow-auto p-4 flex justify-center">
                                 <img
-                                    src={`http://localhost:5000/uploads/${test.filename}`}
+                                    src={`http://localhost:5000/uploads/${question.filename || test.filename}`}
                                     className="max-w-full h-auto shadow-lg rounded"
                                     alt="Question Paper"
                                 />
@@ -232,7 +315,7 @@ const TestPage = () => {
                     </div>
                 )}
 
-                <div className={`${test.filename && !test.filename.endsWith('.json') ? 'w-1/2' : 'max-w-5xl mx-auto'} p-6 md:p-12 overflow-y-auto h-[calc(100vh-160px)]`}>
+                <div className={`${(question.filename || (test.filename && !test.filename.endsWith('.json'))) ? 'w-1/2' : 'max-w-5xl mx-auto'} p-6 md:p-12 overflow-y-auto h-[calc(100vh-160px)]`}>
                     <div className="flex items-center gap-4 mb-8">
                         <span className="px-4 py-1.5 rounded-full bg-slate-900 text-white text-sm font-bold">
                             Question {currentQuestion + 1} of {test.questionsCount}

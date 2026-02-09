@@ -2,16 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  LayoutDashboard, BookOpen, LineChart, User,
-  LogOut, Menu, X, Award, Flame, Clock,
+  BookOpen, User, Award, Flame, Clock,
   Calendar, ChevronDown, FileText, ArrowRight
 } from 'lucide-react';
+import DashboardLayout from '../components/Layout/DashboardLayout';
 
 const Dashboard = () => {
-  const [isSidebarOpen, setSidebarOpen] = useState(true);
   const [selectedSubject, setSelectedSubject] = useState('All Subjects');
   const [user, setUser] = useState({ fullName: "Scholar", role: "student" });
   const [exams, setExams] = useState([]);
+  const [subjects, setSubjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
@@ -38,6 +38,13 @@ const Dashboard = () => {
         if (testsRes.ok) {
           const testsData = await testsRes.json();
           setExams(testsData);
+        }
+
+        // Fetch subjects
+        const subRes = await fetch('http://localhost:5000/api/subjects');
+        if (subRes.ok) {
+          const subData = await subRes.json();
+          setSubjects(subData);
         }
 
       } catch (err) {
@@ -67,52 +74,12 @@ const Dashboard = () => {
   );
 
   return (
-    <div className="flex min-h-screen bg-[#FDFCFB] font-sans text-slate-900">
-      {/* SIDEBAR */}
-      <aside className={`${isSidebarOpen ? 'w-64' : 'w-20'} bg-[#0F172A] text-white transition-all duration-300 flex flex-col fixed h-full z-50`}>
-        <div className="p-6 flex items-center justify-between">
-          {isSidebarOpen && <motion.h1 initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-xl font-serif font-bold tracking-tight text-blue-400">Siddha-Veda</motion.h1>}
-          <button onClick={() => setSidebarOpen(!isSidebarOpen)} className="p-1 hover:bg-slate-800 rounded-md">
-            {isSidebarOpen ? <X size={20} /> : <Menu size={20} />}
-          </button>
-        </div>
-
-        <nav className="flex-1 mt-4 px-4 space-y-2">
-          <NavItem
-            icon={<LayoutDashboard size={20} />}
-            label="Dashboard"
-            active={window.location.pathname === '/dashboard'}
-            isOpen={isSidebarOpen}
-            onClick={() => navigate('/dashboard')}
-          />
-          <NavItem
-            icon={<LineChart size={20} />}
-            label="Progress"
-            isOpen={isSidebarOpen}
-            onClick={() => navigate('/progresspage')}
-          />
-          <NavItem
-            icon={<User size={20} />}
-            label="Profile"
-            isOpen={isSidebarOpen}
-            onClick={() => navigate('/profilepage')}
-          />
-        </nav>
-
-        <div className="p-4 border-t border-slate-800">
-          <button onClick={() => { localStorage.removeItem('token'); navigate('/login'); }} className="flex items-center gap-4 px-4 py-3 w-full text-slate-400 hover:text-white transition-colors hover:bg-red-500/10 rounded-xl">
-            <LogOut size={20} />
-            {isSidebarOpen && <span className="font-medium">Logout</span>}
-          </button>
-        </div>
-      </aside>
-
-      {/* MAIN CONTENT AREA */}
-      <main className={`flex-1 transition-all duration-300 ${isSidebarOpen ? 'ml-64' : 'ml-20'} p-8 md:p-12`}>
-        <header className="mb-12 flex justify-between items-end">
+    <DashboardLayout>
+      <div className="p-4 md:p-8 lg:p-12">
+        <header className="mb-8 lg:mb-12 flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
           <div>
-            <h2 className="text-4xl font-serif font-bold text-gray-900 mb-2">Welcome back, {user.fullName}</h2>
-            <p className="text-gray-500 text-lg">Continue your journey through ancient wisdom</p>
+            <h2 className="text-2xl md:text-3xl lg:text-4xl font-serif font-bold text-gray-900 mb-2">Welcome back, {user.fullName}</h2>
+            <p className="text-gray-500 text-base md:text-lg">Continue your journey through ancient wisdom</p>
           </div>
         </header>
 
@@ -164,17 +131,17 @@ const Dashboard = () => {
 
         {/* UPCOMING EXAMS SECTION */}
         <section className="mb-12">
-          <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
-            <h3 className="text-2xl font-serif font-bold text-slate-800">Available Assessments</h3>
-            <div className="relative group">
+          <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 lg:mb-8 gap-4">
+            <h3 className="text-xl md:text-2xl font-serif font-bold text-slate-800">Available Assessments</h3>
+            <div className="relative group w-full md:w-auto">
               <select
                 onChange={(e) => setSelectedSubject(e.target.value)}
-                className="appearance-none bg-white border border-gray-200 rounded-lg px-4 py-2 pr-10 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-900/20 cursor-pointer"
+                className="w-full md:w-auto appearance-none bg-white border border-gray-200 rounded-lg px-4 py-2 pr-10 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-900/20 cursor-pointer"
               >
                 <option>All Subjects</option>
-                <option>Noi Naadal</option>
-                <option>Maruthuvam</option>
-                <option>Gunapadam</option>
+                {subjects.map((s) => (
+                  <option key={s._id || s.name} value={s.name}>{s.name}</option>
+                ))}
               </select>
               <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
             </div>
@@ -193,16 +160,16 @@ const Dashboard = () => {
                   className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm relative overflow-hidden group"
                 >
                   <div className="flex justify-between items-start mb-6">
-                    <span className={`bg-[#0F172A] text-white text-[11px] font-bold px-3 py-1 rounded-full uppercase tracking-wider`}>
+                    <span className="bg-[#0F172A] text-white text-[11px] font-bold px-3 py-1 rounded-full uppercase tracking-wider">
                       {exam.subject}
                     </span>
                     <Calendar className="text-gray-300" size={20} />
                   </div>
                   <h4 className="text-xl font-bold text-slate-900 mb-4 group-hover:text-blue-900 transition-colors">{exam.title}</h4>
-                  <div className="flex flex-wrap gap-y-2 gap-x-6 text-sm text-gray-500 mb-8">
+                  <div className="flex flex-wrap gap-y-2 gap-x-4 lg:gap-x-6 text-sm text-gray-500 mb-8">
                     <div className="flex items-center gap-2"><Calendar size={16} className="text-blue-700" /> {new Date(exam.createdAt).toLocaleDateString()}</div>
                     <div className="flex items-center gap-2"><Clock size={16} className="text-blue-700" /> 20 mins</div>
-                    <div className="text-gray-400 font-medium">{exam.questionsCount || 0} questions • {exam.difficulty}</div>
+                    <div className="text-gray-400 font-medium">{exam.questionsCount || 0} Qs • {exam.difficulty}</div>
                   </div>
                   <motion.button
                     whileTap={{ scale: 0.95 }}
@@ -226,19 +193,9 @@ const Dashboard = () => {
             ))}
           </div>
         </section>
-      </main>
-    </div>
+      </div>
+    </DashboardLayout>
   );
 };
-
-const NavItem = ({ icon, label, active = false, isOpen, onClick }) => (
-  <button
-    onClick={onClick}
-    className={`flex items-center gap-4 px-4 py-3 rounded-xl w-full transition-all ${active ? 'bg-blue-800 text-white shadow-lg shadow-blue-900/20' : 'text-slate-400 hover:bg-slate-800 hover:text-white'
-      }`}
-  >
-    {icon} {isOpen && <span className="font-medium whitespace-nowrap">{label}</span>}
-  </button>
-);
 
 export default Dashboard;

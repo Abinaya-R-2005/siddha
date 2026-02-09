@@ -24,6 +24,7 @@ mongoose.connect(MONGODB_URI)
     .then(() => {
         console.log('✅ Connected to MongoDB');
         createInitialAdmin();
+        initializeSubjects();
     })
     .catch(err => console.error('❌ MongoDB Connection Error:', err.message));
 
@@ -37,16 +38,40 @@ const storage = multer.diskStorage({
 });
 
 const fileFilter = (req, file, cb) => {
-    if (file.mimetype === 'image/jpeg' || file.mimetype === 'image/jpg' || file.mimetype === 'image/png') {
+    const allowedTypes = ['application/json', 'application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
+    if (allowedTypes.includes(file.mimetype)) {
         cb(null, true);
     } else {
-        cb(new Error('Only image files are allowed!'), false);
+        cb(null, false); // Accept but maybe handle error later if strictly needed, or return error here.
+        // Formulter error handling to work well, we might need to handle it in the route.
+        // Let's just return true for now to avoid the multer error crashing the app if the frontend sends a weird type,
+        // but frontend validation should catch it. Actually, returning error is better.
+        cb(new Error('Invalid file type. Only JSON, PDF, and Images are allowed!'), false);
     }
 };
 
 const upload = multer({ storage, fileFilter });
 
 // --- MODELS ---
+
+const SubjectSchema = new mongoose.Schema({
+    name: { type: String, required: true, unique: true },
+    code: String
+});
+const Subject = mongoose.model('Subject', SubjectSchema);
+
+const initializeSubjects = async () => {
+    try {
+        const count = await Subject.countDocuments();
+        if (count === 0) {
+            const defaults = ['Noi Naadal', 'Maruthuvam', 'Gunapadam', 'Sirappu Maruthuvam', 'Varma Kalai'];
+            await Subject.insertMany(defaults.map(name => ({ name })));
+            console.log('✅ Default subjects initialized');
+        }
+    } catch (error) {
+        console.error('Error initializing subjects:', error);
+    }
+};
 
 // --- MODELS ---
 
@@ -68,6 +93,16 @@ const UserSchema = new mongoose.Schema({
 
 const User = mongoose.model('User', UserSchema);
 
+const AdminUserSchema = new mongoose.Schema({
+    fullName: { type: String, required: true },
+    email: { type: String, required: true, unique: true },
+    password: { type: String, required: true },
+    role: { type: String, enum: ['faculty', 'admin'], default: 'faculty' },
+    lastActive: Date
+}, { timestamps: true });
+
+const AdminUser = mongoose.model('AdminUser', AdminUserSchema);
+
 const QuestionBankSchema = new mongoose.Schema({
     title: String,
     subject: String,
@@ -77,10 +112,14 @@ const QuestionBankSchema = new mongoose.Schema({
     questions: [{
         question: String,
         options: [String],
-        answer: Number // Index of the correct option
+        answer: Number, // Index of the correct option
+        filename: String // Image for this specific question
     }],
     questionsCount: { type: Number, default: 0 },
-    attempts: { type: Number, default: 0 }
+    attempts: { type: Number, default: 0 },
+    negativeMarking: { type: Boolean, default: false },
+    startTime: { type: Date },
+    endTime: { type: Date }
 }, { timestamps: true });
 
 const QuestionBank = mongoose.model('QuestionBank', QuestionBankSchema);
@@ -132,6 +171,10 @@ const verifyEducator = (req, res, next) => {
 app.post('/api/auth/register', async (req, res) => {
     try {
         const { fullName, email, password, role } = req.body;
+        // Registration is for Students mainly.
+        // If checking for admin registration (unlikely public), we'd need more logic.
+        // Assuming student registration for now.
+
         const exists = await User.findOne({ email });
         if (exists) return res.status(400).json({ message: 'User already exists' });
 
@@ -146,13 +189,30 @@ app.post('/api/auth/register', async (req, res) => {
 
 app.post('/api/auth/login', async (req, res) => {
     try {
-        const { email, password } = req.body;
-        const user = await User.findOne({ email });
+        const { email, password, role: loginType } = req.body;
+        let user;
+        let collectionName = 'User';
+
+        if (loginType === 'faculty') {
+            user = await AdminUser.findOne({ email });
+            collectionName = 'AdminUser';
+        } else {
+            // Default to Student check
+            user = await User.findOne({ email });
+            if (user && user.role !== 'student') {
+                return res.status(403).json({ message: 'Please use the Admin/Faculty login.' });
+            }
+        }
+
         if (!user || !(await bcrypt.compare(password, user.password))) {
+            // If checking Admin and not found, user might exist in User DB?
+            // User requested separate DB checks. So strictly fail.
             return res.status(400).json({ message: 'Invalid credentials' });
         }
+
         user.lastActive = new Date();
         await user.save();
+
         const token = jwt.sign({ id: user._id, role: user.role }, JWT_SECRET, { expiresIn: '1d' });
         res.json({ token, user: { id: user._id, email: user.email, role: user.role, fullName: user.fullName } });
     } catch (err) { res.status(500).json({ message: err.message }); }
@@ -160,7 +220,12 @@ app.post('/api/auth/login', async (req, res) => {
 
 app.get('/api/user/profile', verifyToken, async (req, res) => {
     try {
-        const user = await User.findById(req.user.id).select('-password');
+        let user;
+        if (req.user.role === 'admin' || req.user.role === 'faculty') {
+            user = await AdminUser.findById(req.user.id).select('-password');
+        } else {
+            user = await User.findById(req.user.id).select('-password');
+        }
         res.json(user);
     } catch (err) { res.status(500).json({ message: err.message }); }
 });
@@ -237,7 +302,28 @@ app.post('/api/admin/question-banks', verifyEducator, upload.array('files', 10),
         if (req.body.manualQuestions) {
             try {
                 questions = JSON.parse(req.body.manualQuestions);
-                questionsCount = parseInt(req.body.questionsCount) || questions.length;
+
+                // Map uploaded files to questions that expect them
+                let fileIdx = 0;
+                questions = questions.map(q => {
+                    if (q.file !== undefined || q.preview !== undefined || q.hasImage) { // Legacy or marker
+                        // ... we'll use a better marker
+                    }
+                    return q;
+                });
+
+                // Actually, the new frontend sends questions with 'file' removed but 'hasImage' or similar can be used.
+                // Let's use 'hasNewFile' as the marker.
+                questions = questions.map(q => {
+                    if (q.hasNewFile && req.files && req.files[fileIdx]) {
+                        q.filename = req.files[fileIdx].filename;
+                        fileIdx++;
+                    }
+                    delete q.hasNewFile;
+                    return q;
+                });
+
+                questionsCount = questions.length; // Fixed: Use questions.length directly after processing
             } catch (pErr) {
                 console.error("Failed to parse manual questions:", pErr);
                 return res.status(400).json({ message: "Invalid question data format" });
@@ -248,10 +334,13 @@ app.post('/api/admin/question-banks', verifyEducator, upload.array('files', 10),
 
         const newBank = new QuestionBank({
             ...req.body,
-            filename: filenames.length > 0 ? filenames[0] : null, // Store first file as primary legacy support
+            filename: filenames.length > 0 ? filenames[0] : null,
             filenames: filenames,
             questions: questions,
-            questionsCount: questionsCount || req.body.questionsCount || 0
+            questionsCount: questionsCount || req.body.questionsCount || 0,
+            negativeMarking: req.body.negativeMarking === 'true' || req.body.negativeMarking === true,
+            startTime: req.body.startTime ? new Date(req.body.startTime) : null,
+            endTime: req.body.endTime ? new Date(req.body.endTime) : null
         });
         await newBank.save();
         res.status(201).json(newBank);
@@ -261,19 +350,25 @@ app.post('/api/admin/question-banks', verifyEducator, upload.array('files', 10),
 app.delete('/api/admin/question-banks/:id', verifyEducator, async (req, res) => {
     try {
         const bank = await QuestionBank.findById(req.params.id);
+        if (!bank) return res.status(404).json({ message: 'Not found' });
 
-        // Delete legacy single file
-        if (bank && bank.filename) {
-            const filePath = path.join(uploadDir, bank.filename);
-            if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-        }
-
-        // Delete multiple files
-        if (bank && bank.filenames && bank.filenames.length > 0) {
-            bank.filenames.forEach(filename => {
+        // Helper to safely delete file
+        const deleteFile = (filename) => {
+            if (!filename) return;
+            try {
                 const filePath = path.join(uploadDir, filename);
                 if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-            });
+            } catch (e) {
+                console.error(`Failed to delete file ${filename}:`, e);
+            }
+        };
+
+        // Delete legacy single file
+        if (bank.filename) deleteFile(bank.filename);
+
+        // Delete multiple files
+        if (bank.filenames && bank.filenames.length > 0) {
+            bank.filenames.forEach(f => deleteFile(f));
         }
 
         await QuestionBank.findByIdAndDelete(req.params.id);
@@ -281,7 +376,7 @@ app.delete('/api/admin/question-banks/:id', verifyEducator, async (req, res) => 
     } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
-app.put('/api/admin/question-banks/:id', verifyAdmin, upload.array('files', 10), async (req, res) => {
+app.put('/api/admin/question-banks/:id', verifyAdmin, upload.array('files', 100), async (req, res) => {
     try {
         const { title, subject, difficulty } = req.body;
         const bank = await QuestionBank.findById(req.params.id);
@@ -291,61 +386,57 @@ app.put('/api/admin/question-banks/:id', verifyAdmin, upload.array('files', 10),
         if (title) bank.title = title;
         if (subject) bank.subject = subject;
         if (difficulty) bank.difficulty = difficulty;
+        if (req.body.negativeMarking !== undefined) {
+            bank.negativeMarking = req.body.negativeMarking === 'true' || req.body.negativeMarking === true;
+        }
+        if (req.body.startTime !== undefined) {
+            bank.startTime = req.body.startTime ? new Date(req.body.startTime) : null;
+        }
+        if (req.body.endTime !== undefined) {
+            bank.endTime = req.body.endTime ? new Date(req.body.endTime) : null;
+        }
 
         // Initialize with existing state
         let finalFilenames = bank.filenames && bank.filenames.length > 0 ? bank.filenames : (bank.filename ? [bank.filename] : []);
         let finalQuestions = bank.questions || [];
 
-        // 1. Handle Updates/Deletions (frontend sends updated lists)
-        if (req.body.updatedFilenames && req.body.updatedQuestions) {
+        // Process Updates & New Files
+        if (req.body.updatedQuestions) {
             try {
-                const keptFilenames = JSON.parse(req.body.updatedFilenames);
-                const keptQuestions = JSON.parse(req.body.updatedQuestions);
+                const incomingQuestions = JSON.parse(req.body.updatedQuestions);
 
                 // Identify deleted files
-                const filesToDelete = finalFilenames.filter(f => !keptFilenames.includes(f));
+                // Existing files in the bank
+                const existingFilenames = bank.filenames || [];
+                // Filenames kept in the incoming update (excluding new files which don't have filenames yet)
+                const keptFilenames = incomingQuestions.filter(q => q.filename && !q.hasNewFile).map(q => q.filename);
+                const filesToDelete = existingFilenames.filter(f => !keptFilenames.includes(f));
 
-                // Delete physical files
                 filesToDelete.forEach(filename => {
                     const filePath = path.join(uploadDir, filename);
                     if (fs.existsSync(filePath)) {
-                        try {
-                            fs.unlinkSync(filePath);
-                        } catch (delErr) {
-                            console.error(`Failed to delete file ${filename}:`, delErr);
+                        try { fs.unlinkSync(filePath); } catch (e) {
+                            console.error("Failed to delete file:", filename, e);
                         }
                     }
                 });
 
-                finalFilenames = keptFilenames;
-                finalQuestions = keptQuestions;
+                // Map new files to questions
+                let fileIdx = 0;
+                finalQuestions = incomingQuestions.map(q => {
+                    if (q.hasNewFile && req.files && req.files[fileIdx]) {
+                        q.filename = req.files[fileIdx].filename;
+                        fileIdx++;
+                    }
+                    delete q.hasNewFile;
+                    return q;
+                });
+
+                finalFilenames = finalQuestions.filter(q => q.filename).map(q => q.filename);
             } catch (err) {
-                console.error("Failed to parse updated lists:", err);
-                return res.status(400).json({ message: "Invalid updated data format" });
+                console.error("Update failed logic:", err);
+                return res.status(400).json({ message: "Invalid update data" });
             }
-        }
-
-        // Process New Files & Questions
-        if (req.files && req.files.length > 0) {
-            const newFilenames = req.files.map(f => f.filename);
-
-            let newQuestions = [];
-            if (req.body.manualQuestions) {
-                try {
-                    newQuestions = JSON.parse(req.body.manualQuestions);
-                } catch (pErr) {
-                    console.error("Failed to parse manual questions:", pErr);
-                    return res.status(400).json({ message: "Invalid question data format" });
-                }
-            }
-
-            // Append to existing
-            finalFilenames = [...finalFilenames, ...newFilenames];
-            // If legacy filename exists and not in filenames, ensure we don't handle it poorly, 
-            // but we are just appending so it should be fine. 
-            // Ideally we migrate legacy `filename` to `filenames` but for now just append.
-
-            finalQuestions = [...finalQuestions, ...newQuestions];
         }
 
         // Apply final changes
@@ -366,8 +457,6 @@ app.get('/api/admin/question-banks/:id/download', verifyAdmin, async (req, res) 
 
         // Check if there are multiple files
         if (bank.filenames && bank.filenames.length > 0) {
-            // For now, if multiple, we just download the first one to avoid complexity of zipping on the fly
-            // The user mainly asked for upload capability.
             const mainFile = bank.filenames[0];
             const filePath = path.join(uploadDir, mainFile);
             if (fs.existsSync(filePath)) {
@@ -381,10 +470,55 @@ app.get('/api/admin/question-banks/:id/download', verifyAdmin, async (req, res) 
             }
         }
 
-        const jsonData = JSON.stringify({ questions: bank.questions }, null, 2);
+        // If no file, or file missing, generate JSON
+        const jsonData = JSON.stringify(bank.questions || [], null, 2);
         res.setHeader('Content-Type', 'application/json');
         res.setHeader('Content-Disposition', `attachment; filename="${bank.title.replace(/[^a-z0-9]/gi, '_')}.json"`);
         res.send(jsonData);
+    } catch (err) {
+        console.error("Download error:", err);
+        res.status(500).json({ message: err.message });
+    }
+});
+
+// --- SUBJECTS ---
+app.get('/api/subjects', async (req, res) => {
+    try {
+        const subjects = await Subject.find().sort({ name: 1 });
+        res.json(subjects);
+    } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
+app.post('/api/admin/subjects', verifyAdmin, async (req, res) => {
+    try {
+        const { name } = req.body;
+        if (!name) return res.status(400).json({ message: 'Subject name required' });
+
+        const exists = await Subject.findOne({ name });
+        if (exists) return res.status(400).json({ message: 'Subject already exists' });
+
+        const newSubject = new Subject({ name });
+        await newSubject.save();
+        res.status(201).json(newSubject);
+    } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
+app.put('/api/admin/subjects/:id', verifyAdmin, async (req, res) => {
+    try {
+        const { name } = req.body;
+        if (!name) return res.status(400).json({ message: 'Subject name required' });
+
+        const subject = await Subject.findByIdAndUpdate(req.params.id, { name }, { new: true });
+        if (!subject) return res.status(404).json({ message: 'Subject not found' });
+
+        res.json(subject);
+    } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
+app.delete('/api/admin/subjects/:id', verifyAdmin, async (req, res) => {
+    try {
+        await Subject.findByIdAndDelete(req.params.id);
+        res.json({ message: 'Subject deleted' });
     } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
@@ -411,9 +545,23 @@ app.post('/api/user/tests/:id/submit', verifyToken, async (req, res) => {
         if (!test) return res.status(404).json({ message: 'Test not found' });
 
         let score = 0;
+        let correctCount = 0;
+        let wrongCount = 0;
+
         test.questions.forEach((q, idx) => {
-            if (answers[idx] === q.answer) score++;
+            if (answers[idx] === q.answer) {
+                correctCount++;
+            } else if (answers[idx] !== null && answers[idx] !== undefined && answers[idx] !== '') {
+                wrongCount++;
+            }
         });
+
+        if (test.negativeMarking) {
+            score = correctCount - (wrongCount * 0.25);
+            if (score < 0) score = 0;
+        } else {
+            score = correctCount;
+        }
 
         const percentage = ((score / test.questions.length) * 100).toFixed(1);
 
@@ -483,11 +631,11 @@ app.post('/api/user/submit-test', verifyToken, async (req, res) => {
 // --- HELPER: INITIAL ADMIN ---
 async function createInitialAdmin() {
     const adminEmail = 'admin@siddhaveda.com';
-    const exists = await User.findOne({ email: adminEmail });
+    const exists = await AdminUser.findOne({ email: adminEmail });
     if (!exists) {
         const hashedPassword = await bcrypt.hash('admin123', 10);
-        await User.create({ fullName: 'Admin', email: adminEmail, password: hashedPassword, role: 'admin' });
-        console.log('🚀 Admin Ready: admin@siddhaveda.com / admin123');
+        await AdminUser.create({ fullName: 'Admin', email: adminEmail, password: hashedPassword, role: 'admin' });
+        console.log('🚀 Admin Ready in AdminUser DB: admin@siddhaveda.com / admin123');
     }
 }
 

@@ -23,7 +23,7 @@ const Login = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            const response = await axios.post('http://localhost:5000/api/auth/login', formData);
+            const response = await axios.post('http://localhost:5000/api/auth/login', { ...formData, role });
             const { token, user } = response.data;
 
             localStorage.setItem('token', token);
@@ -44,77 +44,105 @@ const Login = () => {
     return (
         <AuthLayout>
             <div className="w-full">
-                <div className="flex bg-gray-100 p-1 rounded-2xl mb-10 w-fit mx-auto md:mx-0">
+                <div className="flex bg-[#F1F5F9] p-1 rounded-xl mb-6 w-fit mx-auto md:mx-0 shadow-inner">
                     <button
                         onClick={() => handleRoleChange('student')}
-                        className={`flex items-center gap-2 px-6 py-3 rounded-xl transition-all duration-300 ${role === 'student'
-                            ? 'bg-white text-gray-800 shadow-sm font-bold'
-                            : 'text-gray-500 hover:text-gray-700'
+                        className={`flex items-center gap-2 px-6 py-2.5 rounded-lg transition-all duration-300 ${role === 'student'
+                            ? 'bg-white text-[#0A1629] shadow-md font-bold'
+                            : 'text-gray-500 hover:text-gray-800'
                             }`}
                     >
-                        <GraduationCap size={20} />
-                        <span>Student Scholar</span>
+                        <GraduationCap size={20} className={role === 'student' ? 'text-[#0A1629]' : 'text-gray-400'} />
+                        <span className="text-sm tracking-wide">Student</span>
                     </button>
                     <button
                         onClick={() => handleRoleChange('faculty')}
+<<<<<<< HEAD
                         className={`flex items-center gap-2 px-6 py-4 rounded-xl transition-all duration-300 ${role === 'faculty'
                             ? 'bg-[#0F172A] text-white shadow-lg font-bold'
                             : 'text-gray-500 hover:text-gray-700'
+=======
+                        className={`flex items-center gap-2 px-6 py-2.5 rounded-lg transition-all duration-300 ${role === 'faculty'
+                            ? 'bg-[#0A1629] text-white shadow-xl font-bold'
+                            : 'text-gray-500 hover:text-gray-800'
+>>>>>>> 739c07d8b0bfa81e8bd684f455c0c970e2e33039
                             }`}
                     >
-                        <ShieldCheck size={20} />
-                        <span>Admin Faculty</span>
+                        <ShieldCheck size={20} className={role === 'faculty' ? 'text-cyan-400' : 'text-gray-400'} />
+                        <span className="text-sm tracking-wide">Faculty</span>
                     </button>
                 </div>
 
-                <div className="mb-10">
-                    <h2 className="text-4xl font-serif font-bold text-gray-900 mb-2">Welcome Back</h2>
-                    <p className="text-gray-500">
+                <div className="mb-8">
+                    <h2 className="text-3xl font-serif font-black text-[#0A1629] mb-2 tracking-tight">Welcome Back</h2>
+                    <p className="text-gray-500 text-base leading-relaxed max-w-sm">
                         Sign in to access your {role === 'student' ? 'educational' : 'administrative'} dashboard
                     </p>
                 </div>
 
-                <form className="space-y-6" onSubmit={handleSubmit}> {/* Added onSubmit */}
-                    <Input
-                        label="Email Address"
-                        name="email"
-                        type="email"
-                        placeholder="scholar@siddha.edu"
-                        icon={Mail}
-                        value={formData.email}
-                        onChange={handleChange}
-                        required
-                    />
-                    <Input
-                        label="Password"
-                        name="password"
-                        type="password"
-                        placeholder="Enter your password"
-                        icon={Lock}
-                        value={formData.password}
-                        onChange={handleChange}
-                        required
-                    />
+                <form className="space-y-5" onSubmit={handleSubmit}>
+                    <div className="space-y-4">
+                        <Input
+                            label="Email Address"
+                            name="email"
+                            type="email"
+                            placeholder="scholar@siddha.edu"
+                            icon={Mail}
+                            value={formData.email}
+                            onChange={handleChange}
+                            required
+                        />
+                        <Input
+                            label="Password"
+                            name="password"
+                            type="password"
+                            placeholder="Enter your password"
+                            icon={Lock}
+                            value={formData.password}
+                            onChange={handleChange}
+                            required
+                        />
+                    </div>
 
+<<<<<<< HEAD
                     <div className="flex items-center justify-between text-sm mb-8">
                         <label className="flex items-center text-gray-600 cursor-pointer">
                             <input type="checkbox" className="mr-2 w-4 h-4 rounded border-gray-300 text-[#0F172A] focus:ring-[#0F172A]/20" />
                             Remember me
                         </label>
                         <button type="button" className="font-semibold text-[#0F172A] hover:text-[#1e293b] transition-colors">
+=======
+                    <div className="flex items-center justify-between text-sm py-1">
+                        <label className="flex items-center text-gray-600 cursor-pointer group">
+                            <input
+                                type="checkbox"
+                                className="mr-2 w-4 h-4 rounded-md border-gray-300 text-[#0A1629] focus:ring-[#0A1629]/20 transition-all cursor-pointer"
+                            />
+                            <span className="group-hover:text-gray-900 transition-colors">Remember me</span>
+                        </label>
+                        <button type="button" className="font-bold text-[#0A1629] hover:text-cyan-600 transition-colors">
+>>>>>>> 739c07d8b0bfa81e8bd684f455c0c970e2e33039
                             Forgot password?
                         </button>
                     </div>
 
+<<<<<<< HEAD
                     <Button type="submit" className="w-full !bg-[#0F172A] !hover:bg-[#1e293b] !shadow-[#0F172A]/20">
+=======
+                    <Button type="submit" className="w-full !py-3 !rounded-xl !bg-[#0A1629] hover:!bg-[#060e1a] !text-base !font-bold !shadow-lg !shadow-[#0A1629]/20">
+>>>>>>> 739c07d8b0bfa81e8bd684f455c0c970e2e33039
                         Sign In
                     </Button>
 
-                    <div className="text-center mt-8 text-gray-500 font-medium">
+                    <div className="text-center mt-6 text-gray-500 font-medium">
                         Don't have an account?{' '}
                         <Link
                             to={`/register/${role}`}
+<<<<<<< HEAD
                             className="text-[#0F172A] hover:underline font-bold"
+=======
+                            className="text-[#0A1629] hover:text-cyan-600 font-black"
+>>>>>>> 739c07d8b0bfa81e8bd684f455c0c970e2e33039
                         >
                             Request Access
                         </Link>
