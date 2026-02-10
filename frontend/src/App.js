@@ -14,7 +14,7 @@ import StudentHome from './pages/StudentHome';
 
 function App() {
   return (
-    <Router>
+    <Router >
       <Routes>
         <Route path="/" element={<Home />} />
 

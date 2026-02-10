@@ -26,9 +26,12 @@ const AdminDashboard = () => {
     const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
     const [editingBank, setEditingBank] = useState(null);
     const [selectedSubject, setSelectedSubject] = useState('All Subjects');
+    const [selectedCategory, setSelectedCategory] = useState('MRB'); // For filtering Question Vault
     const [newSubject, setNewSubject] = useState('');
+    const [newSubjectCategory, setNewSubjectCategory] = useState('MRB');
     const [selectedStudent, setSelectedStudent] = useState(null);
     const [editingSubject, setEditingSubject] = useState(null); // { _id, name }
+    const [reattemptRequests, setReattemptRequests] = useState([]);
     const navigate = useNavigate();
 
     // ... fetchAllData ...
@@ -45,7 +48,10 @@ const AdminDashboard = () => {
         if (!newSubject.trim()) return;
         try {
             const token = localStorage.getItem('token');
-            await axios.post('http://localhost:5000/api/admin/subjects', { name: newSubject }, {
+            await axios.post('http://localhost:5000/api/admin/subjects', {
+                name: newSubject,
+                category: newSubjectCategory
+            }, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setNewSubject('');
@@ -101,6 +107,9 @@ const AdminDashboard = () => {
             const subResponse = await axios.get('http://localhost:5000/api/subjects');
             setSubjects(subResponse.data);
 
+            const reRes = await axios.get('http://localhost:5000/api/admin/reattempt-requests', config);
+            setReattemptRequests(reRes.data);
+
         } catch (err) {
             console.log("Using mock data as backend failed or unauthorized", err);
             if (err.response && (err.response.status === 401 || err.response.status === 403)) {
@@ -109,6 +118,51 @@ const AdminDashboard = () => {
             }
         }
     }, [navigate]);
+
+    const handleDeleteStudent = async (id) => {
+        if (!window.confirm("Are you sure you want to delete this student and all their records?")) return;
+        try {
+            const token = localStorage.getItem('token');
+            await axios.delete(`http://localhost:5000/api/admin/users/${id}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            fetchAllData();
+        } catch (err) {
+            alert('Failed to delete student: ' + (err.response?.data?.message || err.message));
+        }
+    };
+
+    const handleReattemptAction = async (requestId, status) => {
+        try {
+            const token = localStorage.getItem('token');
+            await axios.put(`http://localhost:5000/api/admin/reattempt-requests/${requestId}`, { status }, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            fetchAllData();
+        } catch (err) {
+            alert('Action failed: ' + (err.response?.data?.message || err.message));
+        }
+    };
+
+    const handleToggleStatus = async (bank) => {
+        const id = bank._id || bank.id;
+        if (!id) {
+            alert('Error: Question bank ID not found');
+            return;
+        }
+        const newStatus = bank.status === 'published' ? 'disabled' : 'published';
+        try {
+            const token = localStorage.getItem('token');
+            console.log(`Toggling status for ${id} to ${newStatus}`);
+            await axios.patch(`http://localhost:5000/api/admin/question-banks/${id}/status`, { status: newStatus }, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            fetchAllData();
+        } catch (err) {
+            console.error("Status update error", err);
+            alert('Failed to update test status: ' + (err.response?.data?.message || err.message));
+        }
+    };
 
     useEffect(() => {
         fetchAllData();
@@ -186,6 +240,18 @@ const AdminDashboard = () => {
                                 <p className="text-slate-500 text-sm md:text-base">Track individual student progress</p>
                             </>
                         )}
+                        {activeTab === 'Requests' && (
+                            <>
+                                <h2 className="text-4xl font-serif font-bold text-[#0F172A] mb-2">Re-attempt Requests</h2>
+                                <p className="text-slate-500">Manage student requests for test re-takes</p>
+                            </>
+                        )}
+                        {activeTab === 'Subjects' && (
+                            <>
+                                <h2 className="text-4xl font-serif font-bold text-[#0F172A] mb-2">Subject Management</h2>
+                                <p className="text-slate-500">Organize and categorize your curriculum</p>
+                            </>
+                        )}
                     </div>
 
                     <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
@@ -207,7 +273,6 @@ const AdminDashboard = () => {
                                 {subjects.length > 0 ? subjects.map(s => (
                                     <option key={s._id || s.name} value={s.name}>{s.name}</option>
                                 )) : (
-                                    // Fallback if subjects not loaded yet
                                     ['Noi Naadal', 'Maruthuvam', 'Gunapadam', 'Sirappu Maruthuvam', 'Varma Kalai'].map(s => (
                                         <option key={s} value={s}>{s}</option>
                                     ))
@@ -215,6 +280,7 @@ const AdminDashboard = () => {
                             </select>
                             <ChevronDown size={16} className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500" />
                         </div>
+                        {/* Tab buttons removed as they are now in the sidebar */}
                     </div>
                 </header>
 
@@ -266,200 +332,302 @@ const AdminDashboard = () => {
                 {/* CONTENT: QUESTION VAULT */}
                 {activeTab === 'Question Vault' && (
                     <div>
-                        <div className="mb-8">
+                        <div className="mb-8 flex flex-col md:flex-row gap-6 items-start md:items-center justify-between">
+                            <div className="flex bg-slate-100 p-1 rounded-xl">
+                                {['MRB', 'AIAPGET'].map(cat => (
+                                    <button
+                                        key={cat}
+                                        onClick={() => setSelectedCategory(cat)}
+                                        className={`px-6 py-2 rounded-lg text-sm font-bold transition-all ${selectedCategory === cat ? 'bg-white text-[#C2410C] shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                                    >
+                                        {cat} Questions
+                                    </button>
+                                ))}
+                            </div>
                             <div className="relative w-full md:w-96">
                                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                                 <input
                                     type="text"
-                                    placeholder="Search question banks..."
+                                    placeholder={`Search ${selectedCategory} question banks...`}
                                     className="pl-10 pr-4 py-2 w-full rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-500/20 text-sm"
                                 />
                             </div>
                         </div>
 
                         <div className="space-y-6">
-                            {(selectedSubject === 'All Subjects' ? questionBanks : questionBanks.filter(b => b.subject === selectedSubject)).length > 0 ?
-                                (selectedSubject === 'All Subjects' ? questionBanks : questionBanks.filter(b => b.subject === selectedSubject)).map((bank) => (
-                                    <div key={bank._id || bank.id} className="bg-white p-6 rounded-xl border border-slate-100 flex justify-between items-center hover:shadow-sm transition-shadow">
-                                        <div>
-                                            <div className="flex items-center gap-3 mb-1">
-                                                <h4 className="text-lg font-bold text-slate-900">{bank.title}</h4>
-                                                <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${bank.difficulty === 'Hard' ? 'bg-red-100 text-red-600' : 'bg-amber-100 text-amber-600'
-                                                    }`}>
-                                                    {bank.difficulty}
-                                                </span>
+                            {questionBanks
+                                .filter(b => b.category === selectedCategory)
+                                .filter(b => selectedSubject === 'All Subjects' || b.subject === selectedSubject)
+                                .length > 0 ?
+                                questionBanks
+                                    .filter(b => b.category === selectedCategory)
+                                    .filter(b => selectedSubject === 'All Subjects' || b.subject === selectedSubject)
+                                    .map((bank) => (
+                                        <div key={bank._id || bank.id} className="bg-white p-6 rounded-xl border border-slate-100 flex justify-between items-center hover:shadow-sm transition-shadow">
+                                            <div>
+                                                <div className="flex items-center gap-3 mb-1">
+                                                    <h4 className="text-lg font-bold text-slate-900">{bank.title}</h4>
+                                                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${bank.difficulty === 'Hard' ? 'bg-red-100 text-red-600' : 'bg-amber-100 text-amber-600'
+                                                        }`}>
+                                                        {bank.difficulty}
+                                                    </span>
+                                                </div>
+                                                <p className="text-sm font-semibold text-teal-600 mb-3">{bank.subject}</p>
+                                                <div className="flex items-center gap-6 text-xs text-slate-500 font-medium">
+                                                    <span>{bank.questionsCount || bank.questions} questions</span>
+                                                    <span>Uploaded {new Date(bank.createdAt || bank.uploaded).toLocaleDateString()}</span>
+                                                    <span>{bank.attempts} students attempted</span>
+                                                </div>
                                             </div>
-                                            <p className="text-sm font-semibold text-teal-600 mb-3">{bank.subject}</p>
-                                            <div className="flex items-center gap-6 text-xs text-slate-500 font-medium">
-                                                <span>{bank.questionsCount || bank.questions} questions</span>
-                                                <span>Uploaded {new Date(bank.createdAt || bank.uploaded).toLocaleDateString()}</span>
-                                                <span>{bank.attempts} students attempted</span>
+                                            <div className="flex items-center gap-4">
+                                                <div className="flex flex-col items-center">
+                                                    <span className="text-[10px] font-bold text-slate-400 mb-1 uppercase tracking-tighter">Test Status</span>
+                                                    <button
+                                                        onClick={() => handleToggleStatus(bank)}
+                                                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${bank.status === 'published' ? 'bg-green-500' : 'bg-slate-300'}`}
+                                                    >
+                                                        <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${bank.status === 'published' ? 'translate-x-6' : 'translate-x-1'}`} />
+                                                    </button>
+                                                    <span className={`text-[10px] font-bold mt-1 uppercase ${bank.status === 'published' ? 'text-green-600' : 'text-slate-400'}`}>
+                                                        {bank.status === 'published' ? 'Active' : 'Disabled'}
+                                                    </span>
+                                                </div>
+                                                <div className="w-px h-10 bg-slate-100 mx-1"></div>
+                                                <button onClick={() => handleDownload(bank)} className="p-2 text-slate-400 hover:text-teal-600 transition-colors" title="Download"><Download size={18} /></button>
+                                                <button onClick={() => setEditingBank(bank)} className="p-2 text-slate-400 hover:text-blue-600 transition-colors" title="Edit"><Edit size={18} /></button>
+                                                <button onClick={() => handleDelete(bank._id)} className="p-2 text-slate-400 hover:text-red-600 transition-colors" title="Delete"><Trash2 size={18} /></button>
                                             </div>
                                         </div>
-                                        <div className="flex items-center gap-3">
-                                            <button onClick={() => handleDownload(bank)} className="p-2 text-slate-400 hover:text-teal-600 transition-colors"><Download size={18} /></button>
-                                            <button onClick={() => setEditingBank(bank)} className="p-2 text-slate-400 hover:text-blue-600 transition-colors"><Edit size={18} /></button>
-                                            <button onClick={() => handleDelete(bank._id)} className="p-2 text-slate-400 hover:text-red-600 transition-colors"><Trash2 size={18} /></button>
-                                        </div>
-                                    </div>
-                                )) : (
+                                    )) : (
                                     <div className="text-center py-10 text-slate-400">
                                         No question banks found for {selectedSubject}.
                                     </div>
                                 )}
                         </div>
                     </div>
-                )}
+                )
+                }
 
                 {/* CONTENT: STUDENTS */}
-                {activeTab === 'Students' && (
-                    <div>
-                        <div className="mb-8">
-                            <div className="relative w-full md:w-96">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                                <input
-                                    type="text"
-                                    placeholder="Search students..."
-                                    className="pl-10 pr-4 py-2 w-full rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-500/20 text-sm"
-                                />
+                {
+                    activeTab === 'Students' && (
+                        <div>
+                            <div className="mb-8">
+                                <div className="relative w-full md:w-96">
+                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                                    <input
+                                        type="text"
+                                        placeholder="Search students..."
+                                        className="pl-10 pr-4 py-2 w-full rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-500/20 text-sm"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden overflow-x-auto">
+                                <table className="w-full text-left min-w-[800px] md:min-w-full">
+                                    <thead className="bg-slate-50 text-xs font-bold text-slate-500 uppercase tracking-wider">
+                                        <tr>
+                                            <th className="px-6 py-4">Student</th>
+                                            <th className="px-6 py-4 text-center">Tests</th>
+                                            <th className="px-6 py-4 text-center">Avg Score</th>
+                                            <th className="px-6 py-4 text-center">Trend</th>
+                                            <th className="px-6 py-4">Last Active</th>
+                                            <th className="px-6 py-4 text-right">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-100 text-sm">
+                                        {users.filter(u => (u.role || 'student').toLowerCase() === 'student').map((user, i) => (
+                                            <tr key={i} className="hover:bg-slate-50 transition-colors">
+                                                <td className="px-6 py-4">
+                                                    <div>
+                                                        <p className="font-bold text-slate-900">{user.fullName}</p>
+                                                        <p className="text-slate-400 text-xs">{user.email}</p>
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-4 text-center font-medium">{user.testsCompleted || 0}</td>
+                                                <td className="px-6 py-4 text-center">
+                                                    <span className="bg-teal-100 text-teal-700 px-2 py-1 rounded font-bold text-xs">{user.averageScore || '-'}%</span>
+                                                </td>
+                                                <td className="px-6 py-4 text-center">
+                                                    <div className="flex justify-center text-green-500"><TrendingUp size={16} /></div>
+                                                </td>
+                                                <td className="px-6 py-4 text-slate-500 font-medium">
+                                                    {user.lastActive ? new Date(user.lastActive).toLocaleDateString() : 'Never'}
+                                                </td>
+                                                <td className="px-6 py-4 text-right">
+                                                    <div className="flex justify-end gap-2">
+                                                        <button onClick={() => setSelectedStudent(user)} className="text-blue-600 font-bold hover:underline text-xs">View</button>
+                                                        <button onClick={() => handleDeleteStudent(user._id)} className="text-red-600 font-bold hover:underline text-xs">Delete</button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                        {users.filter(u => (u.role || 'student').toLowerCase() === 'student').length === 0 && (
+                                            <tr>
+                                                <td colSpan="6" className="text-center py-8 text-slate-400">
+                                                    No students found. (Total Users fetched: {users.length})
+                                                </td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
-
-                        <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden overflow-x-auto">
-                            <table className="w-full text-left min-w-[800px] md:min-w-full">
-                                <thead className="bg-slate-50 text-xs font-bold text-slate-500 uppercase tracking-wider">
+                    )
+                }
+                {/* CONTENT: REQUESTS */}
+                {
+                    activeTab === 'Requests' && (
+                        <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden">
+                            <table className="w-full text-left">
+                                <thead className="bg-slate-50 text-xs font-bold text-slate-500 uppercase">
                                     <tr>
                                         <th className="px-6 py-4">Student</th>
-                                        <th className="px-6 py-4 text-center">Tests</th>
-                                        <th className="px-6 py-4 text-center">Avg Score</th>
-                                        <th className="px-6 py-4 text-center">Trend</th>
-                                        <th className="px-6 py-4">Last Active</th>
-                                        <th className="px-6 py-4 text-right">Actions</th>
+                                        <th className="px-6 py-4">Assessment</th>
+                                        <th className="px-6 py-4">Date</th>
+                                        <th className="px-6 py-4 text-right">Action</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100 text-sm">
-                                    {users.filter(u => (u.role || 'student').toLowerCase() === 'student').map((user, i) => (
-                                        <tr key={i} className="hover:bg-slate-50 transition-colors">
+                                    {reattemptRequests.filter(r => r.status === 'pending').map((req, i) => (
+                                        <tr key={i} className="hover:bg-slate-50">
                                             <td className="px-6 py-4">
-                                                <div>
-                                                    <p className="font-bold text-slate-900">{user.fullName}</p>
-                                                    <p className="text-slate-400 text-xs">{user.email}</p>
-                                                </div>
+                                                <p className="font-bold text-slate-900">{req.userId?.fullName}</p>
+                                                <p className="text-xs text-slate-400">{req.userId?.email}</p>
                                             </td>
-                                            <td className="px-6 py-4 text-center font-medium">{user.testsCompleted || 0}</td>
-                                            <td className="px-6 py-4 text-center">
-                                                <span className="bg-teal-100 text-teal-700 px-2 py-1 rounded font-bold text-xs">{user.averageScore || '-'}%</span>
+                                            <td className="px-6 py-4">
+                                                <p className="font-medium text-slate-700">{req.testId?.title}</p>
+                                                <p className="text-[10px] text-teal-600 font-bold">{req.testId?.subject}</p>
                                             </td>
-                                            <td className="px-6 py-4 text-center">
-                                                <div className="flex justify-center text-green-500"><TrendingUp size={16} /></div>
-                                            </td>
-                                            <td className="px-6 py-4 text-slate-500 font-medium">
-                                                {user.lastActive ? new Date(user.lastActive).toLocaleDateString() : 'Never'}
-                                            </td>
-                                            <td className="px-6 py-4 text-right">
-                                                <button onClick={() => setSelectedStudent(user)} className="text-orange-600 font-bold hover:underline text-xs">View Details</button>
+                                            <td className="px-6 py-4 text-slate-500">{new Date(req.createdAt).toLocaleDateString()}</td>
+                                            <td className="px-6 py-4 text-right flex justify-end gap-2">
+                                                <button onClick={() => handleReattemptAction(req._id, 'approved')} className="bg-green-600 text-white px-3 py-1 rounded-lg text-xs font-bold hover:bg-green-700 transition-colors">Approve</button>
+                                                <button onClick={() => handleReattemptAction(req._id, 'rejected')} className="bg-red-50 text-red-600 px-3 py-1 rounded-lg text-xs font-bold hover:bg-red-100 transition-colors">Reject</button>
                                             </td>
                                         </tr>
                                     ))}
-                                    {users.filter(u => (u.role || 'student').toLowerCase() === 'student').length === 0 && (
+                                    {reattemptRequests.filter(r => r.status === 'pending').length === 0 && (
                                         <tr>
-                                            <td colSpan="6" className="text-center py-8 text-slate-400">
-                                                No students found. (Total Users fetched: {users.length})
-                                            </td>
+                                            <td colSpan="4" className="text-center py-10 text-slate-400">No pending requests</td>
                                         </tr>
                                     )}
                                 </tbody>
                             </table>
                         </div>
-                    </div>
-                )}
+                    )
+                }
                 {/* CONTENT: SUBJECTS */}
-                {activeTab === 'Subjects' && (
-                    <div className="bg-white p-8 rounded-2xl border border-slate-100 shadow-sm animate-in fade-in slide-in-from-bottom-4">
-                        <div className="mb-8 flex gap-4 max-w-xl">
-                            <input
-                                type="text"
-                                placeholder="Enter specific subject name (e.g., Varma Kalai)"
-                                value={newSubject}
-                                onChange={(e) => setNewSubject(e.target.value)}
-                                className="flex-1 px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#C2410C]/20"
-                            />
-                            <button
-                                onClick={handleAddSubject}
-                                disabled={!newSubject.trim()}
-                                className="bg-[#C2410C] hover:bg-[#9a3412] text-white px-6 py-3 rounded-xl font-bold transition-all disabled:opacity-50"
-                            >
-                                <Upload size={20} className="inline mr-2" /> Add Subject
-                            </button>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {subjects.map((sub) => (
-                                <div key={sub._id} className="bg-slate-50 p-4 rounded-xl border border-slate-200 flex justify-between items-center group hover:bg-white hover:shadow-md transition-all">
-                                    {editingSubject?._id === sub._id ? (
-                                        <div className="flex flex-1 gap-2">
-                                            <input
-                                                type="text"
-                                                className="flex-1 px-2 py-1 bg-white border border-gray-300 rounded text-sm"
-                                                value={editingSubject.name}
-                                                onChange={(e) => setEditingSubject({ ...editingSubject, name: e.target.value })}
-                                            />
-                                            <button onClick={() => requestUpdateSubject(sub._id, editingSubject.name)} className="text-green-600 hover:bg-green-100 p-1 rounded"><Check size={16} /></button>
-                                            <button onClick={() => setEditingSubject(null)} className="text-red-500 hover:bg-red-100 p-1 rounded"><X size={16} /></button>
-                                        </div>
-                                    ) : (
-                                        <>
-                                            <span className="font-medium text-slate-700">{sub.name}</span>
-                                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <button
-                                                    onClick={() => setEditingSubject(sub)}
-                                                    className="p-2 text-slate-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"
-                                                >
-                                                    <Edit size={16} />
-                                                </button>
-                                                <button
-                                                    onClick={() => handleDeleteSubject(sub._id)}
-                                                    className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                                                >
-                                                    <Trash2 size={16} />
-                                                </button>
-                                            </div>
-                                        </>
-                                    )}
+                {
+                    activeTab === 'Subjects' && (
+                        <div className="bg-white p-8 rounded-2xl border border-slate-100 shadow-sm animate-in fade-in slide-in-from-bottom-4">
+                            <div className="mb-8 flex flex-wrap gap-4 items-end">
+                                <div className="flex-1 min-w-[300px]">
+                                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Subject Name</label>
+                                    <input
+                                        type="text"
+                                        placeholder="Enter subject name (e.g., Varma Kalai)"
+                                        value={newSubject}
+                                        onChange={(e) => setNewSubject(e.target.value)}
+                                        className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#C2410C]/20"
+                                    />
                                 </div>
-                            ))}
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Category</label>
+                                    <select
+                                        value={newSubjectCategory}
+                                        onChange={(e) => setNewSubjectCategory(e.target.value)}
+                                        className="px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#C2410C]/20 bg-white"
+                                    >
+                                        <option value="MRB">MRB</option>
+                                        <option value="AIAPGET">AIAPGET</option>
+                                    </select>
+                                </div>
+                                <button
+                                    onClick={handleAddSubject}
+                                    disabled={!newSubject.trim()}
+                                    className="bg-[#C2410C] hover:bg-[#9a3412] text-white px-8 py-3 rounded-xl font-bold transition-all disabled:opacity-50 h-[50px]"
+                                >
+                                    <Upload size={20} className="inline mr-2" /> Add Subject
+                                </button>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                {subjects.map((sub) => (
+                                    <div key={sub._id} className="bg-slate-50 p-4 rounded-xl border border-slate-200 flex justify-between items-center group hover:bg-white hover:shadow-md transition-all">
+                                        {editingSubject?._id === sub._id ? (
+                                            <div className="flex flex-1 gap-2">
+                                                <input
+                                                    type="text"
+                                                    className="flex-1 px-2 py-1 bg-white border border-gray-300 rounded text-sm"
+                                                    value={editingSubject.name}
+                                                    onChange={(e) => setEditingSubject({ ...editingSubject, name: e.target.value })}
+                                                />
+                                                <button onClick={() => requestUpdateSubject(sub._id, editingSubject.name)} className="text-green-600 hover:bg-green-100 p-1 rounded"><Check size={16} /></button>
+                                                <button onClick={() => setEditingSubject(null)} className="text-red-500 hover:bg-red-100 p-1 rounded"><X size={16} /></button>
+                                            </div>
+                                        ) : (
+                                            <>
+                                                <div className="flex flex-col">
+                                                    <span className="font-bold text-slate-800">{sub.name}</span>
+                                                    <span className="text-[10px] font-bold text-teal-600 uppercase tracking-tight">{sub.category}</span>
+                                                </div>
+                                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <button
+                                                        onClick={() => setEditingSubject(sub)}
+                                                        className="p-2 text-slate-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"
+                                                    >
+                                                        <Edit size={16} />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleDeleteSubject(sub._id)}
+                                                        className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                                    >
+                                                        <Trash2 size={16} />
+                                                    </button>
+                                                </div>
+                                            </>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                            {subjects.length === 0 && (
+                                <div className="text-center py-12 text-slate-400">No subjects found. Add one to get started.</div>
+                            )}
                         </div>
-                        {subjects.length === 0 && (
-                            <div className="text-center py-12 text-slate-400">No subjects found. Add one to get started.</div>
-                        )}
-                    </div>
-                )}
+                    )
+                }
 
                 {/* Modals */}
-                {isUploadModalOpen && (
-                    <UploadModal
-                        onClose={() => setIsUploadModalOpen(false)}
-                        onSuccess={handleUploadSuccess}
-                        onAuthError={handleLogout}
-                        subjects={subjects}
-                    />
-                )}
-                {editingBank && (
-                    <EditModal
-                        bank={editingBank}
-                        onClose={() => setEditingBank(null)}
-                        onSuccess={handleUploadSuccess}
-                        subjects={subjects}
-                    />
-                )}
-                {selectedStudent && (
-                    <StudentDetailsModal
-                        student={selectedStudent}
-                        onClose={() => setSelectedStudent(null)}
-                    />
-                )}
-            </div>
-        </AdminLayout>
+                {
+                    isUploadModalOpen && (
+                        <UploadModal
+                            onClose={() => setIsUploadModalOpen(false)}
+                            onSuccess={handleUploadSuccess}
+                            onAuthError={handleLogout}
+                            subjects={subjects}
+                        />
+                    )
+                }
+                {
+                    editingBank && (
+                        <EditModal
+                            bank={editingBank}
+                            onClose={() => setEditingBank(null)}
+                            onSuccess={handleUploadSuccess}
+                            subjects={subjects}
+                        />
+                    )
+                }
+                {
+                    selectedStudent && (
+                        <StudentDetailsModal
+                            student={selectedStudent}
+                            onClose={() => setSelectedStudent(null)}
+                        />
+                    )
+                }
+            </div >
+        </AdminLayout >
     );
 };
 
@@ -477,9 +645,10 @@ const UploadModal = ({ onClose, onSuccess, onAuthError, subjects = [] }) => {
         title: '',
         subject: 'Noi Naadal',
         difficulty: 'Easy',
+        category: 'MRB',
         negativeMarking: false,
-        startTime: '',
-        endTime: ''
+        duration: 60,
+        status: 'published'
     });
     const [questions, setQuestions] = useState([
         { question: '', options: ['', '', '', ''], answer: 0, file: null, preview: null }
@@ -540,8 +709,8 @@ const UploadModal = ({ onClose, onSuccess, onAuthError, subjects = [] }) => {
         data.append('subject', formData.subject);
         data.append('difficulty', formData.difficulty);
         data.append('negativeMarking', formData.negativeMarking);
-        data.append('startTime', formData.startTime);
-        data.append('endTime', formData.endTime);
+        data.append('duration', formData.duration);
+        data.append('status', formData.status);
 
         // Prepare questions for backend
         // We need to keep track of which file belongs to which question
@@ -554,6 +723,67 @@ const UploadModal = ({ onClose, onSuccess, onAuthError, subjects = [] }) => {
                 filesToSend.push(qCopy.file);
                 qCopy.hasNewFile = true;
                 // We don't send the file object in the JSON
+                delete qCopy.file;
+                delete qCopy.preview;
+            }
+            return qCopy;
+        });
+
+        data.append('manualQuestions', JSON.stringify(questionsToSave));
+        data.append('questionsCount', questionsToSave.length);
+        filesToSend.forEach(file => data.append('files', file));
+
+        try {
+            const token = localStorage.getItem('token');
+            await axios.post('http://localhost:5000/api/admin/question-banks', data, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    'Content-Type': 'multipart/form-data'
+                }
+            });
+            onSuccess();
+        } catch (err) {
+            console.error(err);
+            if (err.response && (err.response.status === 401 || err.response.status === 403)) {
+                onAuthError();
+            } else {
+                alert('Upload failed: ' + (err.response?.data?.message || err.message));
+            }
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleSaveAsDraft = (e) => {
+        setFormData(prev => ({ ...prev, status: 'draft' }));
+        // Use a timeout to ensure state update before submit if we were to trigger it automatically,
+        // but it's cleaner to just pass it or use a separate handle.
+        // Let's just update the submit to accept an optional status override.
+    };
+
+    const triggerSubmit = async (e, forceStatus) => {
+        e.preventDefault();
+        const updatedStatus = forceStatus || formData.status;
+
+        if (questions.length === 0) return alert('Please add at least one question');
+
+        setLoading(true);
+        const data = new FormData();
+        data.append('title', formData.title);
+        data.append('subject', formData.subject);
+        data.append('difficulty', formData.difficulty);
+        data.append('negativeMarking', formData.negativeMarking);
+        data.append('duration', formData.duration);
+        data.append('status', updatedStatus);
+        data.append('category', formData.category);
+
+
+        const filesToSend = [];
+        const questionsToSave = questions.map((q) => {
+            const qCopy = { ...q };
+            if (qCopy.file) {
+                filesToSend.push(qCopy.file);
+                qCopy.hasNewFile = true;
                 delete qCopy.file;
                 delete qCopy.preview;
             }
@@ -608,22 +838,29 @@ const UploadModal = ({ onClose, onSuccess, onAuthError, subjects = [] }) => {
                                 />
                             </div>
                             <div>
+                                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Category</label>
+                                <select
+                                    className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#C2410C]/20 text-sm bg-white"
+                                    value={formData.category}
+                                    onChange={e => setFormData({ ...formData, category: e.target.value, subject: subjects.find(s => s.category === e.target.value)?.name || '' })}
+                                >
+                                    <option value="MRB">MRB</option>
+                                    <option value="AIAPGET">AIAPGET</option>
+                                </select>
+                            </div>
+                            <div>
                                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Subject</label>
                                 <select
                                     className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#C2410C]/20 text-sm bg-white"
                                     value={formData.subject}
                                     onChange={e => setFormData({ ...formData, subject: e.target.value })}
                                 >
-                                    {subjects.length > 0 ? subjects.map((sub, i) => (
-                                        <option key={i} value={sub.name}>{sub.name}</option>
-                                    )) : (
-                                        <>
-                                            <option>Noi Naadal</option>
-                                            <option>Maruthuvam</option>
-                                            <option>Gunapadam</option>
-                                            <option>Sirappu Maruthuvam</option>
-                                            <option>Varma Kalai</option>
-                                        </>
+                                    {subjects.filter(s => s.category === formData.category).length > 0 ? (
+                                        subjects.filter(s => s.category === formData.category).map((sub, i) => (
+                                            <option key={i} value={sub.name}>{sub.name}</option>
+                                        ))
+                                    ) : (
+                                        <option value="">No subjects found</option>
                                     )}
                                 </select>
                             </div>
@@ -639,22 +876,14 @@ const UploadModal = ({ onClose, onSuccess, onAuthError, subjects = [] }) => {
                                     <option>Hard</option>
                                 </select>
                             </div>
-                            <div className="md:col-span-2">
-                                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Start Time (Leave empty for immediate)</label>
+                            <div>
+                                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Duration (Min)</label>
                                 <input
-                                    type="datetime-local"
+                                    required
+                                    type="number"
                                     className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#C2410C]/20 text-sm"
-                                    value={formData.startTime}
-                                    onChange={e => setFormData({ ...formData, startTime: e.target.value })}
-                                />
-                            </div>
-                            <div className="md:col-span-2">
-                                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">End Time</label>
-                                <input
-                                    type="datetime-local"
-                                    className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#C2410C]/20 text-sm"
-                                    value={formData.endTime}
-                                    onChange={e => setFormData({ ...formData, endTime: e.target.value })}
+                                    value={formData.duration}
+                                    onChange={e => setFormData({ ...formData, duration: e.target.value })}
                                 />
                             </div>
                         </div>
@@ -781,16 +1010,24 @@ const UploadModal = ({ onClose, onSuccess, onAuthError, subjects = [] }) => {
                         Cancel
                     </button>
                     <button
-                        form="upload-form"
-                        type="submit"
+                        type="button"
+                        onClick={(e) => triggerSubmit(e, 'draft')}
                         disabled={loading}
-                        className="flex-1 py-3 rounded-xl bg-[#C2410C] hover:bg-[#9a3412] text-white font-bold shadow-lg shadow-orange-900/20 transition-all disabled:opacity-70"
+                        className="flex-1 py-3 rounded-xl border-2 border-slate-200 font-bold text-slate-700 hover:bg-slate-100 transition-all disabled:opacity-70"
                     >
-                        {loading ? 'Creating...' : 'Create Question Bank'}
+                        Save Draft
+                    </button>
+                    <button
+                        onClick={(e) => triggerSubmit(e, 'published')}
+                        type="button"
+                        disabled={loading}
+                        className="flex-1 py-3 rounded-xl bg-[#0F172A] hover:bg-black text-white font-bold shadow-lg shadow-slate-900/10 transition-all disabled:opacity-70"
+                    >
+                        {loading ? 'Creating...' : 'Post Question Bank'}
                     </button>
                 </div>
-            </div>
-        </div>
+            </div >
+        </div >
     );
 };
 
@@ -798,10 +1035,10 @@ const EditModal = ({ bank, onClose, onSuccess, subjects = [] }) => {
     const [formData, setFormData] = useState({
         title: bank.title,
         subject: bank.subject,
-        difficulty: bank.difficulty,
-        negativeMarking: bank.negativeMarking || false,
-        startTime: bank.startTime ? new Date(bank.startTime).toISOString().slice(0, 16) : '',
-        endTime: bank.endTime ? new Date(bank.endTime).toISOString().slice(0, 16) : ''
+        category: bank.category || 'MRB',
+        difficulty: bank.difficulty || 'Easy',
+        duration: bank.duration || 60,
+        status: bank.status || 'published'
     });
 
     const [questions, setQuestions] = useState(
@@ -866,8 +1103,9 @@ const EditModal = ({ bank, onClose, onSuccess, subjects = [] }) => {
         data.append('subject', formData.subject);
         data.append('difficulty', formData.difficulty);
         data.append('negativeMarking', formData.negativeMarking);
-        data.append('startTime', formData.startTime);
-        data.append('endTime', formData.endTime);
+        data.append('duration', formData.duration);
+        data.append('status', formData.status);
+        data.append('category', formData.category);
 
         // Map through questions to determine what to send
         const filesToSend = [];
@@ -943,22 +1181,29 @@ const EditModal = ({ bank, onClose, onSuccess, subjects = [] }) => {
                                 />
                             </div>
                             <div>
+                                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Category</label>
+                                <select
+                                    className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#C2410C]/20 text-sm bg-white"
+                                    value={formData.category}
+                                    onChange={e => setFormData({ ...formData, category: e.target.value, subject: subjects.find(s => s.category === e.target.value)?.name || formData.subject })}
+                                >
+                                    <option value="MRB">MRB</option>
+                                    <option value="AIAPGET">AIAPGET</option>
+                                </select>
+                            </div>
+                            <div>
                                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Subject</label>
                                 <select
                                     className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#C2410C]/20 text-sm bg-white"
                                     value={formData.subject}
                                     onChange={e => setFormData({ ...formData, subject: e.target.value })}
                                 >
-                                    {subjects.length > 0 ? subjects.map(s => (
-                                        <option key={s._id || s.name} value={s.name}>{s.name}</option>
-                                    )) : (
-                                        <>
-                                            <option>Noi Naadal</option>
-                                            <option>Maruthuvam</option>
-                                            <option>Gunapadam</option>
-                                            <option>Sirappu Maruthuvam</option>
-                                            <option>Varma Kalai</option>
-                                        </>
+                                    {subjects.filter(s => s.category === formData.category).length > 0 ? (
+                                        subjects.filter(s => s.category === formData.category).map(s => (
+                                            <option key={s._id || s.name} value={s.name}>{s.name}</option>
+                                        ))
+                                    ) : (
+                                        <option value="">No subjects found</option>
                                     )}
                                 </select>
                             </div>
@@ -974,22 +1219,14 @@ const EditModal = ({ bank, onClose, onSuccess, subjects = [] }) => {
                                     <option>Hard</option>
                                 </select>
                             </div>
-                            <div className="md:col-span-2">
-                                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Start Time</label>
+                            <div>
+                                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Duration (Min)</label>
                                 <input
-                                    type="datetime-local"
+                                    required
+                                    type="number"
                                     className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#C2410C]/20 text-sm"
-                                    value={formData.startTime}
-                                    onChange={e => setFormData({ ...formData, startTime: e.target.value })}
-                                />
-                            </div>
-                            <div className="md:col-span-2">
-                                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">End Time</label>
-                                <input
-                                    type="datetime-local"
-                                    className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#C2410C]/20 text-sm"
-                                    value={formData.endTime}
-                                    onChange={e => setFormData({ ...formData, endTime: e.target.value })}
+                                    value={formData.duration}
+                                    onChange={e => setFormData({ ...formData, duration: e.target.value })}
                                 />
                             </div>
                         </div>
@@ -1128,8 +1365,8 @@ const EditModal = ({ bank, onClose, onSuccess, subjects = [] }) => {
                         {loading ? 'Saving Changes...' : 'Save Changes'}
                     </button>
                 </div>
-            </div>
-        </div>
+            </div >
+        </div >
     );
 };
 

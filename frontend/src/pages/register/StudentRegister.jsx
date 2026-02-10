@@ -82,6 +82,7 @@ const StudentRegister = () => {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <Input label="Course / Department" name="course" placeholder="B.Tech CS" onChange={handleChange} />
                             <Select label="Class / Year / Semester" name="year" options={["1st Year", "2nd Year", "3rd Year", "4th Year"]} onChange={handleChange} />
+                            <Select label="Registered Category" name="category" options={["MRB", "AIAPGET"]} onChange={handleChange} />
                             <Input label="Register Number" name="regNo" placeholder="REG-2024-001" onChange={handleChange} />
                             <Input label="Academic Year" name="academicYear" placeholder="2024-2025" onChange={handleChange} />
                         </div>

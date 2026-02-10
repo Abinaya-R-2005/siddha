@@ -57,15 +57,9 @@ const Login = () => {
                     </button>
                     <button
                         onClick={() => handleRoleChange('faculty')}
-<<<<<<< HEAD
-                        className={`flex items-center gap-2 px-6 py-4 rounded-xl transition-all duration-300 ${role === 'faculty'
-                            ? 'bg-[#0F172A] text-white shadow-lg font-bold'
-                            : 'text-gray-500 hover:text-gray-700'
-=======
                         className={`flex items-center gap-2 px-6 py-2.5 rounded-lg transition-all duration-300 ${role === 'faculty'
-                            ? 'bg-[#0A1629] text-white shadow-xl font-bold'
+                            ? 'bg-[#0F172A] text-white shadow-xl font-bold'
                             : 'text-gray-500 hover:text-gray-800'
->>>>>>> 739c07d8b0bfa81e8bd684f455c0c970e2e33039
                             }`}
                     >
                         <ShieldCheck size={20} className={role === 'faculty' ? 'text-cyan-400' : 'text-gray-400'} />
@@ -104,33 +98,20 @@ const Login = () => {
                         />
                     </div>
 
-<<<<<<< HEAD
-                    <div className="flex items-center justify-between text-sm mb-8">
-                        <label className="flex items-center text-gray-600 cursor-pointer">
-                            <input type="checkbox" className="mr-2 w-4 h-4 rounded border-gray-300 text-[#0F172A] focus:ring-[#0F172A]/20" />
-                            Remember me
-                        </label>
-                        <button type="button" className="font-semibold text-[#0F172A] hover:text-[#1e293b] transition-colors">
-=======
                     <div className="flex items-center justify-between text-sm py-1">
                         <label className="flex items-center text-gray-600 cursor-pointer group">
                             <input
                                 type="checkbox"
-                                className="mr-2 w-4 h-4 rounded-md border-gray-300 text-[#0A1629] focus:ring-[#0A1629]/20 transition-all cursor-pointer"
+                                className="mr-2 w-4 h-4 rounded-md border-gray-300 text-[#0F172A] focus:ring-[#0F172A]/20 transition-all cursor-pointer"
                             />
                             <span className="group-hover:text-gray-900 transition-colors">Remember me</span>
                         </label>
-                        <button type="button" className="font-bold text-[#0A1629] hover:text-cyan-600 transition-colors">
->>>>>>> 739c07d8b0bfa81e8bd684f455c0c970e2e33039
+                        <button type="button" className="font-bold text-[#0F172A] hover:text-cyan-600 transition-colors">
                             Forgot password?
                         </button>
                     </div>
 
-<<<<<<< HEAD
-                    <Button type="submit" className="w-full !bg-[#0F172A] !hover:bg-[#1e293b] !shadow-[#0F172A]/20">
-=======
-                    <Button type="submit" className="w-full !py-3 !rounded-xl !bg-[#0A1629] hover:!bg-[#060e1a] !text-base !font-bold !shadow-lg !shadow-[#0A1629]/20">
->>>>>>> 739c07d8b0bfa81e8bd684f455c0c970e2e33039
+                    <Button type="submit" className="w-full !py-3 !rounded-xl !bg-[#0F172A] hover:!bg-[#1e293b] !text-base !font-bold !shadow-lg !shadow-[#0F172A]/20">
                         Sign In
                     </Button>
 
@@ -138,11 +119,7 @@ const Login = () => {
                         Don't have an account?{' '}
                         <Link
                             to={`/register/${role}`}
-<<<<<<< HEAD
-                            className="text-[#0F172A] hover:underline font-bold"
-=======
-                            className="text-[#0A1629] hover:text-cyan-600 font-black"
->>>>>>> 739c07d8b0bfa81e8bd684f455c0c970e2e33039
+                            className="text-[#0F172A] hover:text-cyan-600 font-bold"
                         >
                             Request Access
                         </Link>

@@ -13,6 +13,7 @@ const CreateTest = () => {
     const [formData, setFormData] = useState({
         topic: '',
         questionCount: '',
+        category: 'MRB',
         negativeMarking: false
     });
     const [questions, setQuestions] = useState([]);
@@ -81,6 +82,7 @@ const CreateTest = () => {
             const payload = {
                 title: `${formData.topic} Assessment`,
                 subject: formData.topic,
+                category: formData.category,
                 difficulty: 'Medium',
                 negativeMarking: formData.negativeMarking,
                 questionsCount: questions.length,
@@ -152,6 +154,19 @@ const CreateTest = () => {
                                 min="1"
                                 max="50"
                             />
+
+                            <div className="space-y-1">
+                                <label className="block text-sm font-semibold text-gray-700 ml-1">Test Category</label>
+                                <select
+                                    name="category"
+                                    value={formData.category}
+                                    onChange={handleChange}
+                                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#0F172A]/20 bg-white font-medium"
+                                >
+                                    <option value="MRB">MRB</option>
+                                    <option value="AIAPGET">AIAPGET</option>
+                                </select>
+                            </div>
 
                             <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-100">
                                 <div className="flex items-center gap-3">

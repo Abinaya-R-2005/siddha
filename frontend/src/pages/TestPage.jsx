@@ -66,8 +66,12 @@ const TestPage = () => {
                     setExamStatus('active');
                 } else {
                     // No timing constraints
-                    setTimeLeft(3600); // 1 hour default if no end time
+                    setTimeLeft(testData.duration ? testData.duration * 60 : 3600);
                     setExamStatus('active');
+                }
+
+                if (testData.hasAttempted) {
+                    setExamStatus('already_attempted');
                 }
 
                 // Initialize answers
@@ -105,6 +109,19 @@ const TestPage = () => {
         }
     }, [id, submitting, selectedAnswers]);
 
+    const handleRequestReattempt = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            await axios.post(`http://localhost:5000/api/user/tests/${id}/request-reattempt`, {}, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            alert("Request sent successfully!");
+            navigate('/dashboard');
+        } catch (err) {
+            alert(err.response?.data?.message || "Failed to send request");
+        }
+    };
+
     useEffect(() => {
         if (!test || result) return;
         const timer = setInterval(() => {
@@ -130,6 +147,36 @@ const TestPage = () => {
         const s = seconds % 60;
         return `${m}:${s < 10 ? '0' : ''}${s}`;
     };
+
+    if (examStatus === 'already_attempted') return (
+        <div className="min-h-screen bg-[#FDFCFB] flex flex-col items-center justify-center p-6 text-center">
+            <div className="bg-white p-8 rounded-3xl shadow-xl border border-slate-100 max-w-md w-full animate-in zoom-in duration-300">
+                <div className="w-20 h-20 bg-orange-50 text-orange-600 rounded-full flex items-center justify-center mx-auto mb-6 text-3xl">
+                    📝
+                </div>
+                <h2 className="text-3xl font-serif font-bold text-slate-800 mb-4">You've reached your attempt limit</h2>
+                <p className="text-slate-600 mb-8 leading-relaxed">
+                    You have already completed this test. Each assessment allows for a single attempt.
+                    If you need to re-take it, please send a request to the faculty.
+                </p>
+                <div className="grid grid-cols-1 gap-4">
+                    <button
+                        onClick={handleRequestReattempt}
+                        className="w-full bg-[#C2410C] text-white py-4 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-[#9a3412] transition-all shadow-lg shadow-orange-900/10"
+                        disabled={test?.requestStatus === 'pending'}
+                    >
+                        {test?.requestStatus === 'pending' ? 'Request Pending...' : 'Request Re-attempt'}
+                    </button>
+                    <button
+                        onClick={() => navigate('/dashboard')}
+                        className="w-full bg-slate-100 text-slate-700 py-4 rounded-2xl font-bold hover:bg-slate-200 transition-all"
+                    >
+                        Back to Dashboard
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
 
     if (examStatus === 'upcoming') return (
         <div className="min-h-screen bg-[#FDFCFB] flex flex-col items-center justify-center p-6 text-center">
