@@ -5,7 +5,7 @@ import { ChevronDown } from 'lucide-react';
 const Select = ({ label, options, value, onChange, name, placeholder, icon: Icon }) => {
     return (
         <div className="w-full mb-6 relative">
-            <label className="block text-sm font-medium text-gray-700 mb-2 ml-1">
+            <label className="block text-sm font-semibold text-gray-700 mb-2 ml-1">
                 {label}
             </label>
             <div className="relative">
@@ -19,11 +19,11 @@ const Select = ({ label, options, value, onChange, name, placeholder, icon: Icon
                     onChange={onChange}
                     className={`
             block w-full pl-10 pr-10 py-3 
-            border-2 border-gray-200 rounded-xl text-base 
+            border rounded-xl text-base text-gray-900
             outline-none transition-all duration-200
             appearance-none bg-gray-50/50
-            focus:border-[#0A1629] focus:ring-4 focus:ring-[#0A1629]/5 focus:shadow-lg
-            hover:border-gray-300
+            focus:border-black focus:ring-4 focus:ring-black/5 focus:shadow-lg focus:bg-white
+            hover:border-gray-200
           `}
                 >
                     <option value="" disabled>{placeholder || "Select an option"}</option>

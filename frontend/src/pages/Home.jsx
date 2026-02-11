@@ -21,9 +21,9 @@ const Home = () => {
             {/* Navigation */}
             <nav className="fixed top-0 w-full bg-white/80 backdrop-blur-md z-50 border-b border-slate-100 px-6 py-4">
                 <div className="max-w-7xl mx-auto flex justify-between items-center">
-                    <div className="flex items-center gap-2">
-                        <div className="bg-[#0F172A] p-2 rounded-lg">
-                            <GraduationCap className="text-white" size={24} />
+                    <div className="flex items-center gap-3">
+                        <div className="bg-white p-1 rounded-lg shadow-md border border-slate-100">
+                            <img src="/LOGO.jpeg" alt="Logo" className="w-8 h-8 object-contain rounded-md" />
                         </div>
                         <span className="text-xl font-serif font-bold tracking-tight text-[#0F172A]">JCL Siddha Academy</span>
                     </div>
@@ -91,26 +91,39 @@ const Home = () => {
                         <div className="aspect-square bg-gradient-to-br from-blue-50 to-indigo-50 rounded-[4rem] relative overflow-hidden p-8 shadow-inner">
                             <div className="absolute inset-0 bg-grid-slate-200/50 [mask-image:linear-gradient(0deg,#fff,rgba(255,255,255,0.6))]" />
                             <motion.div
-                                animate={{ y: [0, -20, 0] }}
+                                animate={{ y: [0, -15, 0], x: [0, 5, 0] }}
                                 transition={{ duration: 4, repeat: Infinity }}
-                                className="bg-white p-6 rounded-3xl shadow-2xl relative z-10 border border-slate-50"
+                                className="bg-white p-5 rounded-2xl shadow-xl relative z-10 border border-slate-50 w-64"
                             >
-                                <div className="flex items-center gap-4 mb-4">
-                                    <div className="bg-green-100 p-2 rounded-lg text-green-600"><Award size={24} /></div>
-                                    <h4 className="font-bold text-[#0F172A]">MRB & AIAPGET</h4>
+                                <div className="flex items-center gap-3 mb-2">
+                                    <div className="bg-green-100 p-2 rounded-lg text-green-600"><Award size={20} /></div>
+                                    <h4 className="font-bold text-[#0F172A] text-lg">MRB</h4>
                                 </div>
-                                <p className="text-sm text-slate-500">Comprehensive coaching for medical entrance exams.</p>
+                                <p className="text-xs text-slate-500">Elite coaching for Medical Recruitment Board exams.</p>
                             </motion.div>
+
+                            <motion.div
+                                animate={{ y: [0, 15, 0], x: [0, -5, 0] }}
+                                transition={{ duration: 4.5, repeat: Infinity }}
+                                className="bg-white p-5 rounded-2xl shadow-xl absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 border border-slate-50 w-64"
+                            >
+                                <div className="flex items-center gap-3 mb-2">
+                                    <div className="bg-indigo-100 p-2 rounded-lg text-indigo-600"><Target size={20} /></div>
+                                    <h4 className="font-bold text-[#0F172A] text-lg">AIAPGET</h4>
+                                </div>
+                                <p className="text-xs text-slate-500">Master your AIAPGET journey with us.</p>
+                            </motion.div>
+
                             <motion.div
                                 animate={{ y: [0, 20, 0] }}
-                                transition={{ duration: 5, repeat: Infinity }}
-                                className="bg-white p-6 rounded-3xl shadow-2xl absolute right-0 bottom-12 z-10 border border-slate-50"
+                                transition={{ duration: 5, repeat: Infinity, delay: 0.5 }}
+                                className="bg-white p-5 rounded-2xl shadow-xl absolute right-0 bottom-8 z-10 border border-slate-50 w-64"
                             >
-                                <div className="flex items-center gap-4 mb-4">
-                                    <div className="bg-blue-100 p-2 rounded-lg text-blue-600"><CheckCircle2 size={24} /></div>
-                                    <h4 className="font-bold text-[#0F172A]">Online Classes</h4>
+                                <div className="flex items-center gap-3 mb-2">
+                                    <div className="bg-blue-100 p-2 rounded-lg text-blue-600"><CheckCircle2 size={20} /></div>
+                                    <h4 className="font-bold text-[#0F172A] text-lg">Online Classes</h4>
                                 </div>
-                                <p className="text-sm text-slate-500">Live sessions from anywhere.</p>
+                                <p className="text-xs text-slate-500">Live sessions accessible from anywhere.</p>
                             </motion.div>
                         </div>
                     </motion.div>
@@ -316,9 +329,9 @@ const Home = () => {
             {/* Footer */}
             <footer className="py-12 px-6 bg-white">
                 <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
-                    <div className="flex items-center gap-2">
-                        <div className="bg-[#0F172A] p-2 rounded-lg">
-                            <GraduationCap className="text-white" size={20} />
+                    <div className="flex items-center gap-3">
+                        <div className="bg-white p-1 rounded-lg shadow-md border border-slate-100">
+                            <img src="/LOGO.jpeg" alt="Logo" className="w-8 h-8 object-contain rounded-md" />
                         </div>
                         <span className="text-lg font-serif font-bold text-[#0F172A]">JCL Siddha Academy</span>
                     </div>

@@ -204,9 +204,10 @@ const verifyEducator = (req, res, next) => {
 app.post('/api/auth/register', async (req, res) => {
     try {
         const { fullName, email, password, role } = req.body;
-        // Registration is for Students mainly.
-        // If checking for admin registration (unlikely public), we'd need more logic.
-        // Assuming student registration for now.
+
+        if (!fullName || !email || !password) {
+            return res.status(400).json({ message: 'All fields are required' });
+        }
 
         const existsStudent = await User.findOne({ email });
         const existsAdmin = await AdminUser.findOne({ email });
@@ -214,6 +215,7 @@ app.post('/api/auth/register', async (req, res) => {
 
         const hashedPassword = await bcrypt.hash(password, 10);
 
+        // Admins are approved by default, others start as pending
         // Admins are approved by default, others start as pending
         const status = role === 'admin' ? 'approved' : 'pending';
 

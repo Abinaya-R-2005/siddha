@@ -528,6 +528,7 @@ const AdminDashboard = () => {
                                             <tr>
                                                 <th className="px-6 py-4">User Details</th>
                                                 <th className="px-6 py-4">Role</th>
+                                                <th className="px-6 py-4 text-center">Course</th>
                                                 <th className="px-6 py-4">Registration Date</th>
                                                 <th className="px-6 py-4 text-right">Action</th>
                                             </tr>
@@ -541,6 +542,11 @@ const AdminDashboard = () => {
                                                     </td>
                                                     <td className="px-6 py-4 uppercase font-bold text-xs text-slate-500">
                                                         {user.role}
+                                                    </td>
+                                                    <td className="px-6 py-4 text-center">
+                                                        <span className={`px-2 py-1 rounded-full text-[10px] font-black tracking-wider ${user.category === 'AIAPGET' ? 'bg-indigo-100 text-indigo-700' : 'bg-orange-100 text-orange-700'}`}>
+                                                            {user.category || 'MRB'}
+                                                        </span>
                                                     </td>
                                                     <td className="px-6 py-4 text-slate-500">{new Date(user.createdAt).toLocaleDateString()}</td>
                                                     <td className="px-6 py-4 text-right flex justify-end gap-2">

@@ -29,6 +29,12 @@ const FacultyRegister = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        if (!formData.password || formData.password !== formData.confirmPassword) {
+            alert("Passwords do not match or are empty!");
+            return;
+        }
+
         try {
             const response = await axios.post('http://localhost:5000/api/auth/register', {
                 ...formData,
@@ -39,7 +45,7 @@ const FacultyRegister = () => {
                 alert(response.data.message || 'Registration successful. Your account is pending admin approval.');
                 navigate('/login');
             } else {
-                alert('Registration successful! please login to continue.');
+                alert('Registration successful! Please login to continue.');
                 navigate('/login');
             }
         } catch (err) {
@@ -55,7 +61,7 @@ const FacultyRegister = () => {
             case 1:
                 return (
                     <div className="space-y-4">
-                        <h3 className="text-2xl font-serif font-bold text-gray-900 mb-6">Personal Details</h3>
+                        <h3 className="text-2xl font-serif font-black text-black mb-6">Personal Details</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <Input label="Full Name" name="fullName" placeholder="Dr. Jane Smith" onChange={handleChange} />
                             <Select label="Gender" name="gender" options={["Male", "Female", "Other"]} onChange={handleChange} />
@@ -68,7 +74,7 @@ const FacultyRegister = () => {
             case 2:
                 return (
                     <div className="space-y-4">
-                        <h3 className="text-xl font-bold text-gray-800 mb-4">Contact Details</h3>
+                        <h3 className="text-xl font-black text-black mb-4">Contact Details</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <Input label="Mobile Number" name="mobile" placeholder="9876543210" onChange={handleChange} />
                             <Input label="Email ID" name="email" type="email" placeholder="jane@example.com" onChange={handleChange} />
@@ -80,7 +86,7 @@ const FacultyRegister = () => {
             case 3:
                 return (
                     <div className="space-y-4">
-                        <h3 className="text-xl font-bold text-gray-800 mb-4">Educational Qualification</h3>
+                        <h3 className="text-xl font-black text-black mb-4">Educational Qualification</h3>
                         <Select label="Highest Qualification" name="qualification" options={["UG", "PG", "PhD"]} onChange={handleChange} />
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <Input label="Degree & Specialization" name="degree" placeholder="M.Sc Computer Science" onChange={handleChange} />
@@ -92,7 +98,7 @@ const FacultyRegister = () => {
             case 4:
                 return (
                     <div className="space-y-4">
-                        <h3 className="text-xl font-bold text-gray-800 mb-4">Professional Details</h3>
+                        <h3 className="text-xl font-black text-black mb-4">Professional Details</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <Select label="Designation" name="designation" options={["Assistant Prof", "Associate Prof", "Professor"]} onChange={handleChange} />
                             <Input label="Department" name="department" placeholder="Computer Science" onChange={handleChange} />
@@ -105,7 +111,7 @@ const FacultyRegister = () => {
             case 5:
                 return (
                     <div className="space-y-4">
-                        <h3 className="text-xl font-bold text-gray-800 mb-4">Employment Details</h3>
+                        <h3 className="text-xl font-black text-black mb-4">Employment Details</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <Input label="Date of Joining" name="doj" type="date" onChange={handleChange} />
                             <Select label="Employment Type" name="empType" options={["Full-time", "Part-time", "Guest"]} onChange={handleChange} />
@@ -116,7 +122,7 @@ const FacultyRegister = () => {
             case 6:
                 return (
                     <div className="space-y-4">
-                        <h3 className="text-xl font-bold text-gray-800 mb-4">Other & Documents</h3>
+                        <h3 className="text-xl font-black text-black mb-4">Other & Documents</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <Select label="Blood Group" name="bloodGroup" options={["A+", "A-", "O+", "O-"]} onChange={handleChange} />
                             <Input label="Nationality" name="nationality" placeholder="Indian" onChange={handleChange} />
@@ -134,16 +140,33 @@ const FacultyRegister = () => {
             case 7:
                 return (
                     <div className="space-y-4">
-                        <h3 className="text-xl font-bold text-gray-800 mb-4">Login Details</h3>
+                        <h3 className="text-xl font-black text-black mb-4">Login Details</h3>
                         <Input
                             label="Username / Email"
                             name="email"
                             placeholder="jane@example.com"
                             value={formData.email || ''}
                             onChange={handleChange}
+                            required
                         />
-                        <Input label="Password" name="password" type="password" placeholder="Create password" onChange={handleChange} />
-                        <Input label="Confirm Password" name="confirmPassword" type="password" placeholder="Confirm password" onChange={handleChange} />
+                        <Input
+                            label="Password"
+                            name="password"
+                            type="password"
+                            placeholder="Create password"
+                            value={formData.password || ''}
+                            onChange={handleChange}
+                            required
+                        />
+                        <Input
+                            label="Confirm Password"
+                            name="confirmPassword"
+                            type="password"
+                            placeholder="Confirm password"
+                            value={formData.confirmPassword || ''}
+                            onChange={handleChange}
+                            required
+                        />
                     </div>
                 );
             default:
@@ -153,12 +176,12 @@ const FacultyRegister = () => {
 
     return (
         <AuthLayout title="Faculty Registration" subtitle="Join our academic staff">
-            <div className="mb-8">
+            <div className="mb-10">
                 {/* Progress Bar */}
-                <div className="flex items-center justify-between relative">
-                    <div className="absolute left-0 top-1/2 transform -translate-y-1/2 w-full h-1 bg-gray-200 -z-10" />
+                <div className="flex items-center justify-between relative px-2">
+                    <div className="absolute left-0 top-[1.25rem] transform -translate-y-1/2 w-full h-0.5 bg-gray-100 -z-10" />
                     <div
-                        className="absolute left-0 top-1/2 transform -translate-y-1/2 h-1 bg-[#0F172A] transition-all duration-300 -z-10"
+                        className="absolute left-0 top-[1.25rem] transform -translate-y-1/2 h-0.5 bg-black transition-all duration-500 -z-10"
                         style={{ width: `${((currentStep - 1) / (steps.length - 1)) * 100}%` }}
                     />
 
@@ -168,20 +191,19 @@ const FacultyRegister = () => {
                         const isCompleted = step.id < currentStep;
 
                         return (
-                            <div key={step.id} className="flex flex-col items-center gap-2">
+                            <div key={step.id} className="flex flex-col items-center gap-3">
                                 <motion.div
                                     initial={false}
                                     animate={{
-                                        scale: isActive ? 1.2 : 1,
-                                        backgroundColor: isActive || isCompleted ? '#0F172A' : '#fff',
-                                        borderColor: isActive || isCompleted ? '#0F172A' : '#e5e7eb'
+                                        scale: isActive ? 1.15 : 1,
+                                        backgroundColor: isActive ? '#000' : isCompleted ? '#334155' : '#fff',
+                                        borderColor: isActive ? '#000' : isCompleted ? '#334155' : '#e5e7eb'
                                     }}
-                                    className={`w-10 h-10 rounded-full border-2 flex items-center justify-center z-10 transition-colors duration-300 ${isActive || isCompleted ? 'text-white' : 'text-gray-400'}`}
+                                    className={`w-10 h-10 rounded-full border flex items-center justify-center z-10 transition-all duration-300 shadow-sm ${isActive || isCompleted ? 'text-white' : 'text-gray-400'}`}
                                 >
-                                    {isCompleted ? <Check size={20} /> : <Icon size={16} />}
+                                    {isCompleted ? <Check size={20} strokeWidth={3} /> : <Icon size={16} />}
                                 </motion.div>
-                                {/* Hide title on small screens for faculty form due to many steps */}
-                                <span className={`hidden md:block text-xs font-semibold ${isActive ? 'text-[#0F172A]' : 'text-gray-400'}`}>
+                                <span className={`hidden md:block text-[10px] font-black uppercase tracking-tighter transition-colors duration-300 ${isActive ? 'text-black' : 'text-gray-400'}`}>
                                     {step.title}
                                 </span>
                             </div>
@@ -194,30 +216,30 @@ const FacultyRegister = () => {
                 <AnimatePresence mode="wait">
                     <motion.div
                         key={currentStep}
-                        initial={{ x: 20, opacity: 0 }}
+                        initial={{ x: 10, opacity: 0 }}
                         animate={{ x: 0, opacity: 1 }}
-                        exit={{ x: -20, opacity: 0 }}
-                        transition={{ duration: 0.3 }}
+                        exit={{ x: -10, opacity: 0 }}
+                        transition={{ duration: 0.2 }}
                         className="min-h-[300px]"
                     >
                         {renderStep()}
                     </motion.div>
                 </AnimatePresence>
 
-                <div className="flex gap-4 mt-8 pt-4 border-t border-gray-100">
+                <div className="flex gap-4 mt-8 pt-6 border-t border-gray-100">
                     {currentStep > 1 && (
-                        <Button onClick={prevStep} variant="outline" className="flex-1">
+                        <Button onClick={prevStep} variant="outline" className="flex-1 !border-gray-200 !text-gray-700 hover:!bg-gray-50">
                             <ChevronLeft size={20} /> Previous
                         </Button>
                     )}
 
                     {currentStep < steps.length ? (
-                        <Button onClick={nextStep} className="flex-1 !bg-[#0F172A] !hover:bg-[#1e293b] !shadow-[#0F172A]/20">
+                        <Button onClick={nextStep} className="flex-1 !bg-black hover:!bg-gray-800 !text-white !font-black !shadow-lg">
                             Next <ChevronRight size={20} />
                         </Button>
                     ) : (
-                        <Button type="submit" className="flex-1 !bg-[#0F172A] !hover:bg-[#1e293b] !shadow-[#0F172A]/20">
-                            Complete Registration <Check size={20} />
+                        <Button type="submit" className="flex-1 !bg-black hover:!bg-gray-900 !text-white !font-black !shadow-lg">
+                            Complete <Check size={20} />
                         </Button>
                     )}
                 </div>
@@ -225,7 +247,7 @@ const FacultyRegister = () => {
 
             <div className="text-center mt-8">
                 <p className="text-sm text-gray-500 font-medium">
-                    Already have an account? <Link to="/login" className="text-[#0F172A] font-bold hover:underline">Sign in</Link>
+                    Already have an account? <Link to="/login" className="text-black font-black hover:underline underline-offset-4 decoration-black/20">Sign in</Link>
                 </p>
             </div>
         </AuthLayout>

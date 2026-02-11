@@ -47,8 +47,8 @@ const StudentHome = () => {
                             animate={{ opacity: 1, x: 0 }}
                             className="flex items-center gap-3"
                         >
-                            <div className="bg-gradient-to-br from-[#0F172A] to-blue-900 p-2.5 rounded-xl shadow-lg">
-                                <GraduationCap className="text-white" size={26} />
+                            <div className="bg-white p-1 rounded-xl shadow-lg border border-slate-100">
+                                <img src="/LOGO.jpeg" alt="Logo" className="w-10 h-10 object-contain rounded-lg" />
                             </div>
                             <div>
                                 <span className="text-xl font-serif font-bold tracking-tight text-[#0F172A] block">JCL Siddha Academy</span>
@@ -197,11 +197,23 @@ const StudentHome = () => {
                                                 <Award className="text-white" size={32} />
                                             </div>
                                             <div>
-                                                <h4 className="font-bold text-white text-xl">MRB & AIAPGET</h4>
-                                                <p className="text-blue-100 text-sm">Medical Entrance</p>
+                                                <h4 className="font-bold text-white text-xl">MRB</h4>
+                                                <p className="text-blue-100 text-sm">Medical Recruitment</p>
                                             </div>
                                         </div>
-                                        <p className="text-white/90 text-sm leading-relaxed">Comprehensive coaching for competitive medical exams</p>
+                                        <p className="text-white/90 text-sm leading-relaxed">Elite coaching for Medical Recruitment Board exams</p>
+                                    </div>
+                                    <div className="mt-4 bg-white/10 backdrop-blur-sm p-6 rounded-2xl border border-white/20">
+                                        <div className="flex items-center gap-4 mb-4">
+                                            <div className="bg-white/20 p-3 rounded-xl">
+                                                <Target className="text-white" size={32} />
+                                            </div>
+                                            <div>
+                                                <h4 className="font-bold text-white text-xl">AIAPGET</h4>
+                                                <p className="text-blue-100 text-sm">Post Graduate Entrance</p>
+                                            </div>
+                                        </div>
+                                        <p className="text-white/90 text-sm leading-relaxed">Master your AIAPGET journey with our expert guidance</p>
                                     </div>
                                 </motion.div>
 
@@ -503,8 +515,8 @@ const StudentHome = () => {
                 <div className="max-w-7xl mx-auto">
                     <div className="flex flex-col md:flex-row justify-between items-center gap-8">
                         <div className="flex items-center gap-3">
-                            <div className="bg-white/10 backdrop-blur-sm p-3 rounded-xl">
-                                <GraduationCap className="text-white" size={24} />
+                            <div className="bg-white p-1 rounded-xl shadow-lg border border-slate-100">
+                                <img src="/LOGO.jpeg" alt="Logo" className="w-10 h-10 object-contain rounded-lg" />
                             </div>
                             <div>
                                 <span className="text-xl font-serif font-bold block">JCL Siddha Academy</span>
