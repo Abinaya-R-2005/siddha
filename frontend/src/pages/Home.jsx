@@ -5,17 +5,13 @@ import {
     GraduationCap,
     CheckCircle2,
     Clock,
-    BookOpen,
     Target,
-    MessageSquare,
     Phone,
     Mail,
     MapPin,
     ChevronRight,
     ArrowRight,
     Send,
-    HelpCircle,
-    Lightbulb,
     Award
 } from 'lucide-react';
 

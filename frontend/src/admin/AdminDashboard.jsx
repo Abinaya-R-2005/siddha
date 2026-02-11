@@ -754,12 +754,6 @@ const UploadModal = ({ onClose, onSuccess, onAuthError, subjects = [] }) => {
         }
     };
 
-    const handleSaveAsDraft = (e) => {
-        setFormData(prev => ({ ...prev, status: 'draft' }));
-        // Use a timeout to ensure state update before submit if we were to trigger it automatically,
-        // but it's cleaner to just pass it or use a separate handle.
-        // Let's just update the submit to accept an optional status override.
-    };
 
     const triggerSubmit = async (e, forceStatus) => {
         e.preventDefault();
