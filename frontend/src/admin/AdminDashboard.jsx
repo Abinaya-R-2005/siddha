@@ -32,6 +32,8 @@ const AdminDashboard = () => {
     const [selectedStudent, setSelectedStudent] = useState(null);
     const [editingSubject, setEditingSubject] = useState(null); // { _id, name }
     const [reattemptRequests, setReattemptRequests] = useState([]);
+    const [pendingRegistrations, setPendingRegistrations] = useState([]);
+    const [requestType, setRequestType] = useState('registration'); // 'registration' or 'reattempt'
     const navigate = useNavigate();
 
     // ... fetchAllData ...
@@ -110,6 +112,9 @@ const AdminDashboard = () => {
             const reRes = await axios.get('http://localhost:5000/api/admin/reattempt-requests', config);
             setReattemptRequests(reRes.data);
 
+            const pendingRegRes = await axios.get('http://localhost:5000/api/admin/pending-registrations', config);
+            setPendingRegistrations(pendingRegRes.data);
+
         } catch (err) {
             console.log("Using mock data as backend failed or unauthorized", err);
             if (err.response && (err.response.status === 401 || err.response.status === 403)) {
@@ -136,6 +141,22 @@ const AdminDashboard = () => {
         try {
             const token = localStorage.getItem('token');
             await axios.put(`http://localhost:5000/api/admin/reattempt-requests/${requestId}`, { status }, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            fetchAllData();
+        } catch (err) {
+            alert('Action failed: ' + (err.response?.data?.message || err.message));
+        }
+    };
+
+    const handleApprovalAction = async (id, action) => {
+        try {
+            const token = localStorage.getItem('token');
+            const endpoint = action === 'approve'
+                ? `http://localhost:5000/api/admin/approve-registration/${id}`
+                : `http://localhost:5000/api/admin/reject-registration/${id}`;
+
+            await axios.put(endpoint, {}, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             fetchAllData();
@@ -250,6 +271,12 @@ const AdminDashboard = () => {
                             <>
                                 <h2 className="text-4xl font-serif font-bold text-[#0F172A] mb-2">Subject Management</h2>
                                 <p className="text-slate-500">Organize and categorize your curriculum</p>
+                            </>
+                        )}
+                        {activeTab === 'Approvals' && (
+                            <>
+                                <h2 className="text-4xl font-serif font-bold text-[#0F172A] mb-2">Registration Approvals</h2>
+                                <p className="text-slate-500">Approve or reject new user registrations</p>
                             </>
                         )}
                     </div>
@@ -478,41 +505,102 @@ const AdminDashboard = () => {
                 {/* CONTENT: REQUESTS */}
                 {
                     activeTab === 'Requests' && (
-                        <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden">
-                            <table className="w-full text-left">
-                                <thead className="bg-slate-50 text-xs font-bold text-slate-500 uppercase">
-                                    <tr>
-                                        <th className="px-6 py-4">Student</th>
-                                        <th className="px-6 py-4">Assessment</th>
-                                        <th className="px-6 py-4">Date</th>
-                                        <th className="px-6 py-4 text-right">Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-slate-100 text-sm">
-                                    {reattemptRequests.filter(r => r.status === 'pending').map((req, i) => (
-                                        <tr key={i} className="hover:bg-slate-50">
-                                            <td className="px-6 py-4">
-                                                <p className="font-bold text-slate-900">{req.userId?.fullName}</p>
-                                                <p className="text-xs text-slate-400">{req.userId?.email}</p>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <p className="font-medium text-slate-700">{req.testId?.title}</p>
-                                                <p className="text-[10px] text-teal-600 font-bold">{req.testId?.subject}</p>
-                                            </td>
-                                            <td className="px-6 py-4 text-slate-500">{new Date(req.createdAt).toLocaleDateString()}</td>
-                                            <td className="px-6 py-4 text-right flex justify-end gap-2">
-                                                <button onClick={() => handleReattemptAction(req._id, 'approved')} className="bg-green-600 text-white px-3 py-1 rounded-lg text-xs font-bold hover:bg-green-700 transition-colors">Approve</button>
-                                                <button onClick={() => handleReattemptAction(req._id, 'rejected')} className="bg-red-50 text-red-600 px-3 py-1 rounded-lg text-xs font-bold hover:bg-red-100 transition-colors">Reject</button>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                    {reattemptRequests.filter(r => r.status === 'pending').length === 0 && (
-                                        <tr>
-                                            <td colSpan="4" className="text-center py-10 text-slate-400">No pending requests</td>
-                                        </tr>
-                                    )}
-                                </tbody>
-                            </table>
+                        <div className="space-y-6">
+                            <div className="flex bg-slate-100 p-1 rounded-xl w-fit">
+                                <button
+                                    onClick={() => setRequestType('registration')}
+                                    className={`px-6 py-2 rounded-lg text-sm font-bold transition-all ${requestType === 'registration' ? 'bg-white text-[#C2410C] shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                                >
+                                    Registration ({pendingRegistrations.length})
+                                </button>
+                                <button
+                                    onClick={() => setRequestType('reattempt')}
+                                    className={`px-6 py-2 rounded-lg text-sm font-bold transition-all ${requestType === 'reattempt' ? 'bg-white text-[#C2410C] shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                                >
+                                    Re-attempts ({reattemptRequests.filter(r => r.status === 'pending').length})
+                                </button>
+                            </div>
+
+                            <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden shadow-sm">
+                                {requestType === 'registration' ? (
+                                    <table className="w-full text-left">
+                                        <thead className="bg-slate-50 text-xs font-bold text-slate-500 uppercase">
+                                            <tr>
+                                                <th className="px-6 py-4">User Details</th>
+                                                <th className="px-6 py-4">Role</th>
+                                                <th className="px-6 py-4">Registration Date</th>
+                                                <th className="px-6 py-4 text-right">Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-100 text-sm">
+                                            {pendingRegistrations.map((user, i) => (
+                                                <tr key={i} className="hover:bg-slate-50">
+                                                    <td className="px-6 py-4">
+                                                        <p className="font-bold text-slate-900">{user.fullName}</p>
+                                                        <p className="text-xs text-slate-400">{user.email}</p>
+                                                    </td>
+                                                    <td className="px-6 py-4 uppercase font-bold text-xs text-slate-500">
+                                                        {user.role}
+                                                    </td>
+                                                    <td className="px-6 py-4 text-slate-500">{new Date(user.createdAt).toLocaleDateString()}</td>
+                                                    <td className="px-6 py-4 text-right flex justify-end gap-2">
+                                                        <button onClick={() => handleApprovalAction(user._id, 'approve')} className="bg-green-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-green-700 transition-colors flex items-center gap-1">
+                                                            <Check size={14} /> Approve
+                                                        </button>
+                                                        <button onClick={() => handleApprovalAction(user._id, 'reject')} className="bg-red-50 text-red-600 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-red-100 transition-colors flex items-center gap-1">
+                                                            <X size={14} /> Reject
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                            {pendingRegistrations.length === 0 && (
+                                                <tr>
+                                                    <td colSpan="4" className="text-center py-10 text-slate-400 font-medium italic">No pending registrations found</td>
+                                                </tr>
+                                            )}
+                                        </tbody>
+                                    </table>
+                                ) : (
+                                    <table className="w-full text-left">
+                                        <thead className="bg-slate-50 text-xs font-bold text-slate-500 uppercase">
+                                            <tr>
+                                                <th className="px-6 py-4">Student</th>
+                                                <th className="px-6 py-4">Assessment</th>
+                                                <th className="px-6 py-4">Date</th>
+                                                <th className="px-6 py-4 text-right">Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-100 text-sm">
+                                            {reattemptRequests.filter(r => r.status === 'pending').map((req, i) => (
+                                                <tr key={i} className="hover:bg-slate-50">
+                                                    <td className="px-6 py-4">
+                                                        <p className="font-bold text-slate-900">{req.userId?.fullName}</p>
+                                                        <p className="text-xs text-slate-400">{req.userId?.email}</p>
+                                                    </td>
+                                                    <td className="px-6 py-4">
+                                                        <p className="font-medium text-slate-700">{req.testId?.title}</p>
+                                                        <p className="text-[10px] text-teal-600 font-bold">{req.testId?.subject}</p>
+                                                    </td>
+                                                    <td className="px-6 py-4 text-slate-500">{new Date(req.createdAt).toLocaleDateString()}</td>
+                                                    <td className="px-6 py-4 text-right flex justify-end gap-2">
+                                                        <button onClick={() => handleReattemptAction(req._id, 'approved')} className="bg-green-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-green-700 transition-colors flex items-center gap-1">
+                                                            <Check size={14} /> Approve
+                                                        </button>
+                                                        <button onClick={() => handleReattemptAction(req._id, 'rejected')} className="bg-red-50 text-red-600 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-red-100 transition-colors flex items-center gap-1">
+                                                            <X size={14} /> Reject
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                            {reattemptRequests.filter(r => r.status === 'pending').length === 0 && (
+                                                <tr>
+                                                    <td colSpan="4" className="text-center py-10 text-slate-400 font-medium italic">No pending re-attempt requests</td>
+                                                </tr>
+                                            )}
+                                        </tbody>
+                                    </table>
+                                )}
+                            </div>
                         </div>
                     )
                 }
@@ -596,6 +684,8 @@ const AdminDashboard = () => {
                         </div>
                     )
                 }
+
+
 
                 {/* Modals */}
                 {

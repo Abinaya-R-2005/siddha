@@ -33,8 +33,15 @@ const StudentRegister = () => {
                 ...formData,
                 role: 'student'
             });
-            localStorage.setItem('token', response.data.token);
-            navigate('/student-home');
+
+            if (response.data.status === 'pending') {
+                alert(response.data.message || 'Registration successful. Your account is pending admin approval.');
+                navigate('/login');
+            } else {
+                // This case is unlikely given the backend logic, but handled for consistency
+                alert('Registration successful! please login to continue.');
+                navigate('/login');
+            }
         } catch (err) {
             alert(err.response?.data?.message || 'Registration failed');
         }
@@ -115,7 +122,14 @@ const StudentRegister = () => {
                 return (
                     <div className="space-y-4">
                         <h3 className="text-xl font-bold text-gray-800 mb-4">Account Setup</h3>
-                        <Input label="Email (Login Username)" name="loginEmail" type="email" placeholder="john@example.com" value={formData.email} onChange={handleChange} />
+                        <Input
+                            label="Email (Login Username)"
+                            name="email"
+                            type="email"
+                            placeholder="john@example.com"
+                            value={formData.email || ''}
+                            onChange={handleChange}
+                        />
                         <Input label="Password" name="password" type="password" placeholder="Create a strong password" onChange={handleChange} />
                         <Input label="Confirm Password" name="confirmPassword" type="password" placeholder="Repeat password" onChange={handleChange} />
                     </div>

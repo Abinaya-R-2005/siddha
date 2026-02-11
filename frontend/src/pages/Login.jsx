@@ -33,6 +33,8 @@ const Login = () => {
                 navigate('/admin');
             } else if (user.role === 'student') {
                 navigate('/student-home');
+            } else if (user.role === 'faculty') {
+                navigate('/dashboard');
             } else {
                 navigate('/dashboard');
             }

@@ -34,8 +34,14 @@ const FacultyRegister = () => {
                 ...formData,
                 role: 'faculty'
             });
-            localStorage.setItem('token', response.data.token);
-            navigate('/dashboard');
+
+            if (response.data.status === 'pending') {
+                alert(response.data.message || 'Registration successful. Your account is pending admin approval.');
+                navigate('/login');
+            } else {
+                alert('Registration successful! please login to continue.');
+                navigate('/login');
+            }
         } catch (err) {
             alert(err.response?.data?.message || 'Registration failed');
         }
@@ -129,8 +135,13 @@ const FacultyRegister = () => {
                 return (
                     <div className="space-y-4">
                         <h3 className="text-xl font-bold text-gray-800 mb-4">Login Details</h3>
-                        <h3 className="text-2xl font-serif font-bold text-gray-900 mb-6">Login Details</h3>
-                        <Input label="Username / Email" name="loginUser" placeholder="jane.smith" onChange={handleChange} />
+                        <Input
+                            label="Username / Email"
+                            name="email"
+                            placeholder="jane@example.com"
+                            value={formData.email || ''}
+                            onChange={handleChange}
+                        />
                         <Input label="Password" name="password" type="password" placeholder="Create password" onChange={handleChange} />
                         <Input label="Confirm Password" name="confirmPassword" type="password" placeholder="Confirm password" onChange={handleChange} />
                     </div>

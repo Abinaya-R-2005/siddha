@@ -102,6 +102,7 @@ const UserSchema = new mongoose.Schema({
     expertise: String, // Maps to bio
     category: { type: String, enum: ['MRB', 'AIAPGET'], default: 'MRB' },
     studentId: { type: String, unique: true, sparse: true },
+    status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' },
     lastActive: Date
 }, { timestamps: true });
 
@@ -112,6 +113,7 @@ const AdminUserSchema = new mongoose.Schema({
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
     role: { type: String, enum: ['faculty', 'admin'], default: 'faculty' },
+    status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'approved' }, // Admin defaults to approved
     lastActive: Date
 }, { timestamps: true });
 
@@ -206,12 +208,29 @@ app.post('/api/auth/register', async (req, res) => {
         // If checking for admin registration (unlikely public), we'd need more logic.
         // Assuming student registration for now.
 
-        const exists = await User.findOne({ email });
-        if (exists) return res.status(400).json({ message: 'User already exists' });
+        const existsStudent = await User.findOne({ email });
+        const existsAdmin = await AdminUser.findOne({ email });
+        if (existsStudent || existsAdmin) return res.status(400).json({ message: 'User already exists' });
 
         const hashedPassword = await bcrypt.hash(password, 10);
-        const newUser = new User({ ...req.body, password: hashedPassword });
+
+        // Admins are approved by default, others start as pending
+        const status = role === 'admin' ? 'approved' : 'pending';
+
+        let newUser;
+        if (role === 'faculty' || role === 'admin') {
+            newUser = new AdminUser({ ...req.body, password: hashedPassword, status });
+        } else {
+            newUser = new User({ ...req.body, password: hashedPassword, status });
+        }
         await newUser.save();
+
+        if (status === 'pending') {
+            return res.status(201).json({
+                message: 'Registration successful. Please wait for admin approval before logging in.',
+                status: 'pending'
+            });
+        }
 
         const token = jwt.sign({ id: newUser._id, role: newUser.role }, JWT_SECRET, { expiresIn: '1d' });
         res.status(201).json({ token, user: { id: newUser._id, email: newUser.email, role: newUser.role, fullName: newUser.fullName } });
@@ -236,9 +255,14 @@ app.post('/api/auth/login', async (req, res) => {
         }
 
         if (!user || !(await bcrypt.compare(password, user.password))) {
-            // If checking Admin and not found, user might exist in User DB?
-            // User requested separate DB checks. So strictly fail.
             return res.status(400).json({ message: 'Invalid credentials' });
+        }
+
+        if (user.status === 'pending') {
+            return res.status(403).json({ message: 'Your account is pending admin approval.' });
+        }
+        if (user.status === 'rejected') {
+            return res.status(403).json({ message: 'Your account registration has been rejected.' });
         }
 
         user.lastActive = new Date();
@@ -322,6 +346,37 @@ app.delete('/api/admin/users/:id', verifyAdmin, async (req, res) => {
         await Attempt.deleteMany({ userId: req.params.id });
         await ReAttemptRequest.deleteMany({ userId: req.params.id });
         res.json({ message: 'Student and related data deleted successfully' });
+    } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
+// Admin Review Endpoints
+app.get('/api/admin/pending-registrations', verifyAdmin, async (req, res) => {
+    try {
+        const studentPending = await User.find({ status: 'pending' }).select('-password');
+        const facultyPending = await AdminUser.find({ status: 'pending' }).select('-password');
+        res.json([...studentPending, ...facultyPending]);
+    } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
+app.put('/api/admin/approve-registration/:id', verifyAdmin, async (req, res) => {
+    try {
+        let user = await User.findByIdAndUpdate(req.params.id, { status: 'approved' }, { new: true });
+        if (!user) {
+            user = await AdminUser.findByIdAndUpdate(req.params.id, { status: 'approved' }, { new: true });
+        }
+        if (!user) return res.status(404).json({ message: 'User not found' });
+        res.json({ message: 'User registration approved', user });
+    } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
+app.put('/api/admin/reject-registration/:id', verifyAdmin, async (req, res) => {
+    try {
+        let user = await User.findByIdAndUpdate(req.params.id, { status: 'rejected' }, { new: true });
+        if (!user) {
+            user = await AdminUser.findByIdAndUpdate(req.params.id, { status: 'rejected' }, { new: true });
+        }
+        if (!user) return res.status(404).json({ message: 'User not found' });
+        res.json({ message: 'User registration rejected', user });
     } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
