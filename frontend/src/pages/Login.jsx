@@ -46,26 +46,28 @@ const Login = () => {
     return (
         <AuthLayout>
             <div className="w-full">
-                <div className="flex bg-gray-100 p-1 rounded-xl mb-6 w-fit mx-auto md:mx-0 shadow-inner">
+                <div className="flex bg-[#F1F3F5] p-1 rounded-2xl mb-8 w-full max-w-[300px] mx-auto md:mx-0 shadow-[inset_0_2px_4px_rgba(0,0,0,0.05)] border border-gray-200/50">
                     <button
+                        type="button"
                         onClick={() => handleRoleChange('student')}
-                        className={`flex items-center gap-2 px-6 py-2.5 rounded-lg transition-all duration-300 ${role === 'student'
+                        className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl transition-all duration-400 ${role === 'student'
                             ? 'bg-white text-black shadow-md font-bold'
                             : 'text-gray-500 hover:text-gray-800'
                             }`}
                     >
-                        <GraduationCap size={20} className={role === 'student' ? 'text-black' : 'text-gray-400'} />
-                        <span className="text-sm tracking-wide">Student</span>
+                        <GraduationCap size={16} className={role === 'student' ? 'text-black' : 'text-gray-400'} />
+                        <span className="text-[13px] font-bold tracking-tight">Student</span>
                     </button>
                     <button
+                        type="button"
                         onClick={() => handleRoleChange('faculty')}
-                        className={`flex items-center gap-2 px-6 py-2.5 rounded-lg transition-all duration-300 ${role === 'faculty'
-                            ? 'bg-black text-white shadow-xl font-bold'
+                        className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl transition-all duration-400 ${role === 'faculty'
+                            ? 'bg-black text-white shadow-md font-bold scale-[1.02]'
                             : 'text-gray-500 hover:text-gray-800'
                             }`}
                     >
-                        <ShieldCheck size={20} className={role === 'faculty' ? 'text-white' : 'text-gray-400'} />
-                        <span className="text-sm tracking-wide">Faculty</span>
+                        <ShieldCheck size={16} className={role === 'faculty' ? 'text-white' : 'text-gray-400'} />
+                        <span className="text-[13px] font-bold tracking-tight">Faculty</span>
                     </button>
                 </div>
 

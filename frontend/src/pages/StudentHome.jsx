@@ -45,14 +45,14 @@ const StudentHome = () => {
                         <motion.div
                             initial={{ opacity: 0, x: -20 }}
                             animate={{ opacity: 1, x: 0 }}
-                            className="flex items-center gap-3"
+                            className="flex items-center gap-2 md:gap-3"
                         >
-                            <div className="bg-white p-1 rounded-xl shadow-lg border border-slate-100">
-                                <img src="/LOGO.jpeg" alt="Logo" className="w-10 h-10 object-contain rounded-lg" />
+                            <div className="bg-white p-1 rounded-xl shadow-lg border border-slate-100 flex-shrink-0">
+                                <img src="/LOGO.jpeg" alt="Logo" className="w-8 h-8 md:w-10 md:h-10 object-contain rounded-lg" />
                             </div>
-                            <div>
-                                <span className="text-xl font-serif font-bold tracking-tight text-[#0F172A] block">JCL Siddha Academy</span>
-                                <span className="text-xs text-blue-600 font-semibold">Excellence in Education</span>
+                            <div className="min-w-0">
+                                <span className="text-base md:text-xl font-serif font-bold tracking-tight text-[#0F172A] block truncate">JCL Siddha Academy</span>
+                                <span className="text-[10px] md:text-xs text-blue-600 font-semibold truncate block">Excellence in Education</span>
                             </div>
                         </motion.div>
                         <div className="hidden md:flex items-center gap-8 text-sm font-semibold text-slate-600">
@@ -73,14 +73,14 @@ const StudentHome = () => {
                                 <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-blue-600 group-hover:w-full transition-all"></span>
                             </a>
                         </div>
-                        <div className="flex items-center gap-3">
-                            <Link to="/dashboard" className="flex items-center gap-2 text-sm font-bold text-[#0F172A] hover:text-blue-600 transition-colors px-4 py-2 rounded-xl hover:bg-blue-50">
-                                <User size={18} />
-                                Dashboard
+                        <div className="flex items-center gap-2 md:gap-3">
+                            <Link to="/dashboard" className="flex items-center gap-2 text-sm font-bold text-[#0F172A] hover:text-blue-600 transition-colors px-3 md:px-4 py-2 rounded-xl hover:bg-blue-50">
+                                <User size={18} className="flex-shrink-0" />
+                                <span className="hidden sm:inline">Dashboard</span>
                             </Link>
-                            <button onClick={handleLogout} className="flex items-center gap-2 bg-gradient-to-r from-red-500 to-rose-600 text-white px-4 py-2 rounded-xl text-sm font-bold hover:shadow-lg hover:shadow-red-500/30 transition-all">
-                                <LogOut size={18} />
-                                Logout
+                            <button onClick={handleLogout} className="flex items-center gap-2 bg-gradient-to-r from-red-500 to-rose-600 text-white px-3 md:px-4 py-2 rounded-xl text-sm font-bold hover:shadow-lg hover:shadow-red-500/30 transition-all">
+                                <LogOut size={18} className="flex-shrink-0" />
+                                <span className="hidden sm:inline">Logout</span>
                             </button>
                         </div>
                     </div>
@@ -184,36 +184,36 @@ const StudentHome = () => {
                             transition={{ duration: 0.6, delay: 0.3 }}
                             className="relative"
                         >
-                            <div className="relative aspect-square">
+                            <div className="relative aspect-square max-w-[400px] mx-auto lg:max-w-none">
                                 {/* Main Card */}
                                 <motion.div
                                     animate={{ y: [0, -15, 0] }}
                                     transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                                    className="absolute top-0 left-0 right-20 bg-gradient-to-br from-blue-500 to-indigo-600 p-8 rounded-[3rem] shadow-2xl"
+                                    className="absolute top-0 left-0 right-10 md:right-20 bg-gradient-to-br from-blue-500 to-indigo-600 p-4 md:p-8 rounded-[2rem] md:rounded-[3rem] shadow-2xl z-10"
                                 >
-                                    <div className="bg-white/10 backdrop-blur-sm p-6 rounded-2xl border border-white/20">
-                                        <div className="flex items-center gap-4 mb-4">
-                                            <div className="bg-white/20 p-3 rounded-xl">
-                                                <Award className="text-white" size={32} />
+                                    <div className="bg-white/10 backdrop-blur-sm p-4 md:p-6 rounded-xl md:rounded-2xl border border-white/20">
+                                        <div className="flex items-center gap-3 md:gap-4 mb-2 md:mb-4">
+                                            <div className="bg-white/20 p-2 md:p-3 rounded-lg md:rounded-xl">
+                                                <Award className="text-white" size={24} md={32} />
                                             </div>
                                             <div>
-                                                <h4 className="font-bold text-white text-xl">MRB</h4>
-                                                <p className="text-blue-100 text-sm">Medical Recruitment</p>
+                                                <h4 className="font-bold text-white text-lg md:text-xl">MRB</h4>
+                                                <p className="text-blue-100 text-[10px] md:text-sm">Medical Recruitment</p>
                                             </div>
                                         </div>
-                                        <p className="text-white/90 text-sm leading-relaxed">Elite coaching for Medical Recruitment Board exams</p>
+                                        <p className="text-white/90 text-[10px] md:text-sm leading-relaxed">Elite coaching for Medical Recruitment Board exams</p>
                                     </div>
-                                    <div className="mt-4 bg-white/10 backdrop-blur-sm p-6 rounded-2xl border border-white/20">
-                                        <div className="flex items-center gap-4 mb-4">
-                                            <div className="bg-white/20 p-3 rounded-xl">
-                                                <Target className="text-white" size={32} />
+                                    <div className="mt-3 md:mt-4 bg-white/10 backdrop-blur-sm p-4 md:p-6 rounded-xl md:rounded-2xl border border-white/20">
+                                        <div className="flex items-center gap-3 md:gap-4 mb-2 md:mb-4">
+                                            <div className="bg-white/20 p-2 md:p-3 rounded-lg md:rounded-xl">
+                                                <Target className="text-white" size={24} md={32} />
                                             </div>
                                             <div>
-                                                <h4 className="font-bold text-white text-xl">AIAPGET</h4>
-                                                <p className="text-blue-100 text-sm">Post Graduate Entrance</p>
+                                                <h4 className="font-bold text-white text-lg md:text-xl">AIAPGET</h4>
+                                                <p className="text-blue-100 text-[10px] md:text-sm">Post Graduate Entrance</p>
                                             </div>
                                         </div>
-                                        <p className="text-white/90 text-sm leading-relaxed">Master your AIAPGET journey with our expert guidance</p>
+                                        <p className="text-white/90 text-[10px] md:text-sm leading-relaxed">Master your AIAPGET journey with our expert guidance</p>
                                     </div>
                                 </motion.div>
 
@@ -221,28 +221,28 @@ const StudentHome = () => {
                                 <motion.div
                                     animate={{ y: [0, 20, 0], rotate: [0, 5, 0] }}
                                     transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
-                                    className="absolute bottom-0 right-0 left-20 bg-white/80 backdrop-blur-xl p-6 rounded-3xl shadow-2xl border border-white/40"
+                                    className="absolute bottom-4 md:bottom-0 right-0 left-10 md:left-20 bg-white/80 backdrop-blur-xl p-4 md:p-6 rounded-2xl md:rounded-3xl shadow-2xl border border-white/40 z-20"
                                 >
-                                    <div className="flex items-center gap-4 mb-3">
-                                        <div className="bg-gradient-to-br from-green-400 to-emerald-500 p-3 rounded-xl">
-                                            <CheckCircle2 className="text-white" size={24} />
+                                    <div className="flex items-center gap-3 md:gap-4 mb-2 md:mb-3">
+                                        <div className="bg-gradient-to-br from-green-400 to-emerald-500 p-2 md:p-3 rounded-lg md:rounded-xl">
+                                            <CheckCircle2 className="text-white" size={20} md={24} />
                                         </div>
-                                        <h4 className="font-bold text-[#0F172A] text-lg">Online Classes</h4>
+                                        <h4 className="font-bold text-[#0F172A] text-base md:text-lg">Online Classes</h4>
                                     </div>
-                                    <p className="text-slate-600 text-sm">Learn from anywhere, anytime</p>
+                                    <p className="text-slate-600 text-[10px] md:text-sm">Learn from anywhere, anytime</p>
                                 </motion.div>
 
                                 {/* Stats Badge */}
                                 <motion.div
                                     animate={{ scale: [1, 1.1, 1] }}
                                     transition={{ duration: 3, repeat: Infinity }}
-                                    className="absolute top-10 right-0 bg-gradient-to-br from-purple-500 to-pink-600 text-white px-6 py-4 rounded-2xl shadow-xl"
+                                    className="absolute top-10 -right-4 md:right-0 bg-gradient-to-br from-purple-500 to-pink-600 text-white px-4 md:px-6 py-3 md:py-4 rounded-xl md:rounded-2xl shadow-xl z-30 scale-75 md:scale-100"
                                 >
                                     <div className="flex items-center gap-2 mb-1">
-                                        <Users size={20} />
-                                        <span className="text-2xl font-bold">500+</span>
+                                        <Users size={16} md={20} />
+                                        <span className="text-xl md:text-2xl font-bold">500+</span>
                                     </div>
-                                    <p className="text-xs text-purple-100">Active Students</p>
+                                    <p className="text-[10px] text-purple-100">Active Students</p>
                                 </motion.div>
                             </div>
                         </motion.div>

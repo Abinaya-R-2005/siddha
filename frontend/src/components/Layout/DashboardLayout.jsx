@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     LayoutDashboard, LineChart, User,
@@ -40,12 +40,12 @@ const DashboardLayout = ({ children }) => {
 
             {/* MOBILE TOP BAR (Hidden on Desktop) */}
             <div className="lg:hidden fixed top-0 left-0 right-0 bg-[#0F172A] text-white h-16 px-4 flex items-center justify-between z-[60] shadow-md">
-                <div className="flex items-center gap-3">
-                    <div className="bg-white p-1 rounded-lg h-10 w-10">
-                        <img src="/LOGO.jpeg" alt="Logo" className="h-full w-full object-contain" />
+                <Link to="/student-home" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+                    <div className="bg-white p-1 rounded-lg h-10 w-10 flex items-center justify-center">
+                        <img src="/LOGO.jpeg" alt="Logo" className="h-full w-full object-contain rounded-sm" />
                     </div>
                     <span className="font-serif font-bold text-lg">JCL Siddha</span>
-                </div>
+                </Link>
                 <button
                     onClick={() => setSidebarOpen(!isSidebarOpen)}
                     className="p-2 hover:bg-slate-800 rounded-lg text-white"
@@ -77,9 +77,9 @@ const DashboardLayout = ({ children }) => {
                 {/* LOGO & BRANDING SECTION (Desktop only) */}
                 <div className="hidden lg:flex p-4 mb-4 flex-col items-center">
                     <div className={`w-full flex items-center transition-all duration-300 ${isSidebarOpen ? 'justify-between mb-2' : 'justify-center'}`}>
-                        <div className={`bg-white p-1.5 rounded-xl shadow-md transition-all duration-300 ${isSidebarOpen ? 'h-12 w-12' : 'h-14 w-14'}`}>
-                            <img src="/LOGO.jpeg" alt="JCL Logo" className="h-full w-full object-contain" />
-                        </div>
+                        <Link to="/student-home" className={`bg-white p-1.5 rounded-xl shadow-md transition-all duration-300 flex items-center justify-center hover:scale-105 active:scale-95 ${isSidebarOpen ? 'h-12 w-12' : 'h-14 w-14'}`}>
+                            <img src="/LOGO.jpeg" alt="JCL Logo" className="h-full w-full object-contain rounded-md" />
+                        </Link>
                         {isSidebarOpen && (
                             <button onClick={() => setSidebarOpen(false)} className="p-2 hover:bg-slate-800 rounded-lg text-slate-400 focus:outline-none">
                                 <X size={20} />
@@ -89,8 +89,10 @@ const DashboardLayout = ({ children }) => {
                     <AnimatePresence>
                         {isSidebarOpen && (
                             <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }} className="w-full text-left mt-2 px-2">
-                                <span className="text-lg font-serif font-bold tracking-tight text-white leading-tight block">JCL Siddha</span>
-                                <span className="text-[10px] font-sans text-blue-400 font-bold uppercase tracking-widest">Academy</span>
+                                <Link to="/student-home" className="hover:opacity-80 transition-opacity block group">
+                                    <span className="text-lg font-serif font-bold tracking-tight text-white leading-tight block group-hover:text-blue-400">JCL Siddha</span>
+                                    <span className="text-[10px] font-sans text-blue-400 font-bold uppercase tracking-widest">Academy</span>
+                                </Link>
                             </motion.div>
                         )}
                     </AnimatePresence>

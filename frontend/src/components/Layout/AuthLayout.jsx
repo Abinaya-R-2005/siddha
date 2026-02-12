@@ -56,9 +56,9 @@ const AuthLayout = ({ children }) => {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.6 }}
-                    className="w-full max-w-lg relative z-10 px-4 md:px-0"
+                    className="w-full max-w-lg relative z-10 px-2 md:px-0"
                 >
-                    <div className="bg-white rounded-[2.5rem] p-6 md:p-10 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.1)] border border-gray-100 relative overflow-hidden">
+                    <div className="bg-white rounded-[2.5rem] p-4 md:p-10 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.1)] border border-gray-100 relative overflow-hidden">
                         <div className="relative z-20">
                             {children}
                         </div>
