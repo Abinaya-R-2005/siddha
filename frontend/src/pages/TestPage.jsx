@@ -94,7 +94,9 @@ const TestPage = () => {
         setSubmitting(true);
         try {
             const token = localStorage.getItem('token');
-            const answersArray = Object.values(selectedAnswers);
+            const answersArray = test.questions.map((_, idx) =>
+                selectedAnswers[idx] !== undefined ? selectedAnswers[idx] : null
+            );
             const res = await axios.post(`http://localhost:5000/api/user/tests/${id}/submit`, {
                 answers: answersArray
             }, {

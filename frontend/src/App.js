@@ -9,6 +9,7 @@ import AdminDashboard from './admin/AdminDashboard';
 import ProfilePage from './pages/ProfilePage';
 import ProgressPage from './pages/ProgressPage';
 import TestPage from './pages/TestPage';
+import TestPreviewPage from './pages/TestPreviewPage';
 import Home from './pages/Home';
 import StudentHome from './pages/StudentHome';
 
@@ -33,6 +34,7 @@ function App() {
         <Route path="/profilepage" element={<ProfilePage />} />
         <Route path="/progresspage" element={<ProgressPage />} />
         <Route path="/test/:id" element={<TestPage />} />
+        <Route path="/test/preview/:id" element={<TestPreviewPage />} />
 
         {/* Catch-all: Redirect unknown URLs back to login */}
         <Route path="*" element={<Navigate to="/login" replace />} />

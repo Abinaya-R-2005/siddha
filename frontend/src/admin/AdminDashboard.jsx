@@ -550,6 +550,9 @@ const AdminDashboard = () => {
                                                     </td>
                                                     <td className="px-6 py-4 text-slate-500">{new Date(user.createdAt).toLocaleDateString()}</td>
                                                     <td className="px-6 py-4 text-right flex justify-end gap-2">
+                                                        <button onClick={() => setSelectedStudent(user)} className="bg-blue-50 text-blue-600 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-blue-100 transition-colors flex items-center gap-1">
+                                                            <Users size={14} /> View Details
+                                                        </button>
                                                         <button onClick={() => handleApprovalAction(user._id, 'approve')} className="bg-green-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-green-700 transition-colors flex items-center gap-1">
                                                             <Check size={14} /> Approve
                                                         </button>
@@ -750,6 +753,15 @@ const UploadModal = ({ onClose, onSuccess, onAuthError, subjects = [] }) => {
         { question: '', options: ['', '', '', ''], answer: 0, file: null, preview: null }
     ]);
     const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        if (subjects.length > 0) {
+            const firstSub = subjects.find(s => s.category === formData.category);
+            if (firstSub && !formData.subject) {
+                setFormData(prev => ({ ...prev, subject: firstSub.name }));
+            }
+        }
+    }, [subjects, formData.category]);
 
     const handleAddQuestion = () => {
         setQuestions([...questions, { question: '', options: ['', '', '', ''], answer: 0, file: null, preview: null }]);
@@ -1480,65 +1492,75 @@ const StudentDetailsModal = ({ student, onClose }) => {
                     <p className="text-slate-500 font-medium">{student.role || 'Student'}</p>
                 </div>
 
-                <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
+                <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-2">
                     <div className="flex justify-between items-center bg-slate-50 p-3 rounded-lg">
                         <span className="text-sm font-bold text-slate-500">Email</span>
                         <span className="text-sm font-medium text-slate-900">{student.email}</span>
                     </div>
-                    {student.regNo && (
+                    {student.gender && (
                         <div className="flex justify-between items-center bg-slate-50 p-3 rounded-lg">
-                            <span className="text-sm font-bold text-slate-500">Reg No</span>
+                            <span className="text-sm font-bold text-slate-500">Gender</span>
+                            <span className="text-sm font-medium text-slate-900">{student.gender}</span>
+                        </div>
+                    )}
+                    {student.dob && (
+                        <div className="flex justify-between items-center bg-slate-50 p-3 rounded-lg">
+                            <span className="text-sm font-bold text-slate-500">Date of Birth</span>
+                            <span className="text-sm font-medium text-slate-900">{student.dob}</span>
+                        </div>
+                    )}
+                    {student.age && (
+                        <div className="flex justify-between items-center bg-slate-50 p-3 rounded-lg">
+                            <span className="text-sm font-bold text-slate-500">Age</span>
+                            <span className="text-sm font-medium text-slate-900">{student.age}</span>
+                        </div>
+                    )}
+                    <div className="h-px bg-slate-100 my-2"></div>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Academic Information</p>
+                    {student.ugYear && (
+                        <div className="flex justify-between items-center bg-slate-50 p-3 rounded-lg border-l-4 border-blue-500">
+                            <span className="text-sm font-bold text-slate-500">UG Academic Year</span>
+                            <span className="text-sm font-medium text-slate-900">{student.ugYear}</span>
+                        </div>
+                    )}
+                    {student.pgCollege && (
+                        <div className="flex flex-col gap-1 bg-slate-50 p-3 rounded-lg border-l-4 border-blue-500">
+                            <span className="text-sm font-bold text-slate-500">PG College Name</span>
+                            <span className="text-sm font-medium text-slate-900">{student.pgCollege}</span>
+                        </div>
+                    )}
+                    {student.pgYear && (
+                        <div className="flex justify-between items-center bg-slate-50 p-3 rounded-lg border-l-4 border-blue-500">
+                            <span className="text-sm font-bold text-slate-500">PG Academic Year</span>
+                            <span className="text-sm font-medium text-slate-900">{student.pgYear}</span>
+                        </div>
+                    )}
+                    {student.category && (
+                        <div className="flex justify-between items-center bg-slate-50 p-3 rounded-lg border-l-4 border-blue-500">
+                            <span className="text-sm font-bold text-slate-500">Registered Category</span>
+                            <span className="text-sm font-medium text-slate-900 font-bold text-blue-900">{student.category}</span>
+                        </div>
+                    )}
+                    {student.regNo && (
+                        <div className="flex justify-between items-center bg-slate-50 p-3 rounded-lg border-l-4 border-blue-500">
+                            <span className="text-sm font-bold text-slate-500">Register Number</span>
                             <span className="text-sm font-medium text-slate-900">{student.regNo}</span>
                         </div>
                     )}
-                    {student.mobile && (
-                        <div className="flex justify-between items-center bg-slate-50 p-3 rounded-lg">
-                            <span className="text-sm font-bold text-slate-500">Mobile</span>
-                            <span className="text-sm font-medium text-slate-900">{student.mobile}</span>
-                        </div>
-                    )}
-                    {student.address && (
-                        <div className="flex flex-col gap-1 bg-slate-50 p-3 rounded-lg">
-                            <span className="text-sm font-bold text-slate-500">Address</span>
-                            <span className="text-sm font-medium text-slate-900">{student.address}</span>
-                        </div>
-                    )}
-                    {student.course && (
-                        <div className="flex justify-between items-center bg-slate-50 p-3 rounded-lg">
-                            <span className="text-sm font-bold text-slate-500">Course</span>
-                            <span className="text-sm font-medium text-slate-900">{student.course}</span>
-                        </div>
-                    )}
-                    {student.year && (
-                        <div className="flex justify-between items-center bg-slate-50 p-3 rounded-lg">
-                            <span className="text-sm font-bold text-slate-500">Year</span>
-                            <span className="text-sm font-medium text-slate-900">{student.year}</span>
-                        </div>
-                    )}
-                    {student.expertise && (
-                        <div className="flex flex-col gap-1 bg-slate-50 p-3 rounded-lg">
-                            <span className="text-sm font-bold text-slate-500">Bio / Expertise</span>
-                            <span className="text-sm font-medium text-slate-900">{student.expertise}</span>
-                        </div>
-                    )}
+                    <div className="h-px bg-slate-100 my-2"></div>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Performance Overview</p>
                     <div className="flex justify-between items-center bg-slate-50 p-3 rounded-lg">
                         <span className="text-sm font-bold text-slate-500">Tests Taken</span>
                         <span className="text-sm font-medium text-slate-900">{student.testsCompleted || 0}</span>
                     </div>
                     <div className="flex justify-between items-center bg-slate-50 p-3 rounded-lg">
                         <span className="text-sm font-bold text-slate-500">Average Score</span>
-                        <span className="text-sm font-medium text-slate-900">{student.averageScore || 0}%</span>
+                        <span className="text-sm font-medium text-blue-600 font-bold">{student.averageScore || 0}%</span>
                     </div>
                     <div className="flex justify-between items-center bg-slate-50 p-3 rounded-lg">
                         <span className="text-sm font-bold text-slate-500">Joined On</span>
                         <span className="text-sm font-medium text-slate-900">
                             {student.createdAt ? new Date(student.createdAt).toLocaleDateString() : 'N/A'}
-                        </span>
-                    </div>
-                    <div className="flex justify-between items-center bg-slate-50 p-3 rounded-lg">
-                        <span className="text-sm font-bold text-slate-500">Last Active</span>
-                        <span className="text-sm font-medium text-slate-900">
-                            {student.lastActive ? new Date(student.lastActive).toLocaleString() : 'Never'}
                         </span>
                     </div>
                 </div>

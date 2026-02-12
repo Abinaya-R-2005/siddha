@@ -94,6 +94,9 @@ const UserSchema = new mongoose.Schema({
     password: { type: String, required: true },
     role: { type: String, enum: ['student', 'faculty', 'admin'], default: 'student' },
     // Student & Profile fields
+    gender: String,
+    dob: String,
+    age: String,
     regNo: String,
     course: String,
     year: String,
@@ -102,6 +105,11 @@ const UserSchema = new mongoose.Schema({
     expertise: String, // Maps to bio
     category: { type: String, enum: ['MRB', 'AIAPGET'], default: 'MRB' },
     studentId: { type: String, unique: true, sparse: true },
+    // New Academic Fields
+    ugCollege: String,
+    ugYear: String,
+    pgCollege: String,
+    pgYear: String,
     status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' },
     lastActive: Date
 }, { timestamps: true });
@@ -149,6 +157,8 @@ const AttemptSchema = new mongoose.Schema({
     score: { type: Number, required: true },
     totalQuestions: Number,
     subject: String,
+    answers: [Number], // Student's selected option indices
+    correctAnswers: [Number], // Correct option indices at time of attempt
     date: { type: Date, default: Date.now }
 }, { timestamps: true });
 
@@ -724,10 +734,7 @@ app.put('/api/admin/reattempt-requests/:id', verifyAdmin, async (req, res) => {
         request.status = status;
         await request.save();
 
-        if (status === 'approved') {
-            // Delete the previous attempt to allow re-taking
-            await Attempt.deleteOne({ userId: request.userId, testId: request.testId });
-        }
+        // Removed Attempt.deleteOne to keep history accessible via Review button
 
         res.json({ message: `Request ${status}` });
     } catch (err) { res.status(500).json({ message: err.message }); }
@@ -751,12 +758,16 @@ app.get('/api/user/tests/:id', verifyToken, async (req, res) => {
 
 app.post('/api/user/tests/:id/submit', verifyToken, async (req, res) => {
     try {
-        const existingAttempt = await Attempt.findOne({ userId: req.user.id, testId: req.params.id });
-        if (existingAttempt) return res.status(403).json({ message: 'Test already attempted' });
-
         const { answers } = req.body; // Array of selected option indices
         const test = await QuestionBank.findById(req.params.id);
         if (!test) return res.status(404).json({ message: 'Test not found' });
+
+        const existingAttempt = await Attempt.findOne({ userId: req.user.id, testId: req.params.id });
+        const reattemptApproved = await ReAttemptRequest.findOne({ userId: req.user.id, testId: req.params.id, status: 'approved' });
+
+        if (existingAttempt && !reattemptApproved) {
+            return res.status(403).json({ message: 'Test already attempted and no re-attempt is approved' });
+        }
 
         let score = 0;
         let correctCount = 0;
@@ -784,9 +795,15 @@ app.post('/api/user/tests/:id/submit', verifyToken, async (req, res) => {
             testId: test._id,
             score: parseFloat(percentage),
             totalQuestions: test.questions.length,
-            subject: test.subject
+            subject: test.subject,
+            answers: answers,
+            correctAnswers: test.questions.map(q => q.answer)
         });
         await attempt.save();
+
+        if (reattemptApproved) {
+            await ReAttemptRequest.deleteOne({ _id: reattemptApproved._id });
+        }
 
         test.attempts += 1;
         await test.save();
@@ -798,9 +815,31 @@ app.post('/api/user/tests/:id/submit', verifyToken, async (req, res) => {
             message: "Test submitted successfully",
             score: percentage,
             correct: correctCount,
-            total: test.questions.length
+            total: test.questions.length,
+            answers: test.questions.map(q => q.answer) // Return correct answers for immediate review
         });
     } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
+app.get('/api/user/tests/:id/preview', verifyToken, async (req, res) => {
+    try {
+        const test = await QuestionBank.findById(req.params.id);
+        if (!test) {
+            console.error(`Preview Failed: Test ${req.params.id} not found`);
+            return res.status(404).json({ message: 'Test metadata not found' });
+        }
+
+        const attempt = await Attempt.findOne({ userId: req.user.id, testId: req.params.id }).sort({ createdAt: -1 });
+        if (!attempt) {
+            console.error(`Preview Failed: No attempt for User ${req.user.id} on Test ${req.params.id}`);
+            return res.status(404).json({ message: 'Attempt record not found' });
+        }
+
+        res.json({ test, attempt });
+    } catch (err) {
+        console.error('Preview Error:', err);
+        res.status(500).json({ message: err.message });
+    }
 });
 
 app.get('/api/user/progress', verifyToken, async (req, res) => {

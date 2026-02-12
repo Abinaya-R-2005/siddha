@@ -17,13 +17,41 @@ const CreateTest = () => {
         negativeMarking: false
     });
     const [questions, setQuestions] = useState([]);
+    const [subjects, setSubjects] = useState([]);
+
+    React.useEffect(() => {
+        const fetchSubjects = async () => {
+            try {
+                const res = await axios.get('http://localhost:5000/api/subjects');
+                setSubjects(res.data);
+                // Set default topic if subjects are available
+                if (res.data.length > 0) {
+                    const firstSubject = res.data.find(s => s.category === formData.category) || res.data[0];
+                    setFormData(prev => ({ ...prev, topic: firstSubject.name }));
+                }
+            } catch (err) {
+                console.error("Failed to fetch subjects", err);
+            }
+        };
+        fetchSubjects();
+    }, []);
 
     const handleChange = (e) => {
         const { name, value, type, checked } = e.target;
-        setFormData(prev => ({
-            ...prev,
-            [name]: type === 'checkbox' ? checked : value
-        }));
+
+        if (name === 'category') {
+            const firstSubject = subjects.find(s => s.category === value);
+            setFormData(prev => ({
+                ...prev,
+                category: value,
+                topic: firstSubject ? firstSubject.name : prev.topic
+            }));
+        } else {
+            setFormData(prev => ({
+                ...prev,
+                [name]: type === 'checkbox' ? checked : value
+            }));
+        }
     };
 
     const handleQuestionChange = (index, field, value) => {
@@ -132,15 +160,23 @@ const CreateTest = () => {
 
                     {step === 1 ? (
                         <div className="space-y-6">
-                            <Input
-                                label="Specific Topic of Siddha"
-                                name="topic"
-                                placeholder="e.g. Noi Naadal, Gunapadam..."
-                                icon={FileText}
-                                value={formData.topic}
-                                onChange={handleChange}
-                                required
-                            />
+                            <div className="space-y-1">
+                                <label className="block text-sm font-semibold text-gray-700 ml-1">Subject of Siddha</label>
+                                <select
+                                    name="topic"
+                                    value={formData.topic}
+                                    onChange={handleChange}
+                                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#0F172A]/20 bg-white font-medium"
+                                >
+                                    {subjects.filter(s => s.category === formData.category).length > 0 ? (
+                                        subjects.filter(s => s.category === formData.category).map((s, idx) => (
+                                            <option key={idx} value={s.name}>{s.name}</option>
+                                        ))
+                                    ) : (
+                                        <option value="">No subjects found</option>
+                                    )}
+                                </select>
+                            </div>
 
                             <Input
                                 label="Number of Questions"

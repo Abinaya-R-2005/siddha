@@ -262,19 +262,31 @@ const Dashboard = () => {
                     <div className="flex items-center gap-2"><Clock size={16} className="text-blue-700" /> {exam.duration || 20} mins</div>
                     <div className="text-gray-400 font-medium">{exam.questionsCount || 0} Qs • {exam.difficulty}</div>
                   </div>
-                  <motion.button
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => handleTestClick(exam)}
-                    disabled={exam.requestStatus === 'pending' || exam.requestStatus === 'rejected'}
-                    className={`w-full font-bold py-4 rounded-xl shadow-lg transition-all ${exam.hasAttempted
-                      ? (exam.requestStatus === 'rejected' ? 'bg-red-50 text-red-400 cursor-not-allowed border border-red-100' : 'bg-orange-600 hover:bg-orange-700 text-white shadow-orange-900/20')
-                      : 'bg-[#0F172A] hover:bg-[#1e293b] text-white'
-                      } disabled:opacity-50`}
-                  >
-                    {exam.hasAttempted
-                      ? (exam.requestStatus === 'pending' ? 'Request Pending' : exam.requestStatus === 'rejected' ? 'Request Rejected' : 'Re-attempt Test')
-                      : 'Start Test'}
-                  </motion.button>
+                  <div className="flex flex-col gap-3">
+                    <motion.button
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => handleTestClick(exam)}
+                      disabled={exam.requestStatus === 'pending' || exam.requestStatus === 'rejected'}
+                      className={`w-full font-bold py-4 rounded-xl shadow-lg transition-all ${exam.hasAttempted
+                        ? (exam.requestStatus === 'rejected' ? 'bg-red-50 text-red-400 cursor-not-allowed border border-red-100' : 'bg-orange-600 hover:bg-orange-700 text-white shadow-orange-900/20')
+                        : 'bg-[#0F172A] hover:bg-[#1e293b] text-white'
+                        } disabled:opacity-50`}
+                    >
+                      {exam.hasAttempted
+                        ? (exam.requestStatus === 'pending' ? 'Request Pending' : exam.requestStatus === 'rejected' ? 'Request Rejected' : 'Re-attempt Test')
+                        : 'Start Test'}
+                    </motion.button>
+
+                    {exam.hasAttempted && (
+                      <motion.button
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => navigate(`/test/preview/${exam._id}`)}
+                        className="w-full font-bold py-3 rounded-xl border-2 border-[#0F172A] text-[#0F172A] hover:bg-[#0F172A] hover:text-white transition-all"
+                      >
+                        Preview Test
+                      </motion.button>
+                    )}
+                  </div>
                 </motion.div>
               ))}
             </AnimatePresence>

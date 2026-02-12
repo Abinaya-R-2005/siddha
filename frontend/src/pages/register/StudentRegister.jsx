@@ -10,16 +10,15 @@ import Button from '../../components/ui/Button';
 
 const steps = [
     { id: 1, title: 'Basic Details', icon: User },
-    { id: 2, title: 'Contact', icon: Phone },
-    { id: 3, title: 'Academic', icon: BookOpen },
-    { id: 4, title: 'Parent', icon: Users },
-    { id: 5, title: 'Other', icon: FileText },
-    { id: 6, title: 'Account', icon: Lock },
+    { id: 2, title: 'Academic', icon: BookOpen },
+    { id: 3, title: 'Account', icon: Lock },
 ];
 
 const StudentRegister = () => {
     const [currentStep, setCurrentStep] = useState(1);
-    const [formData, setFormData] = useState({});
+    const [formData, setFormData] = useState({
+        category: 'MRB'
+    });
     const navigate = useNavigate();
 
     const handleChange = (e) => {
@@ -29,6 +28,13 @@ const StudentRegister = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
+        // If not on the last step (Account Setup), just move to the next step
+        if (currentStep < 3) {
+            nextStep();
+            return;
+        }
+
+        // We are on the last step (Account Setup)
         if (!formData.password || formData.password !== formData.confirmPassword) {
             alert("Passwords do not match or are empty!");
             return;
@@ -66,64 +72,24 @@ const StudentRegister = () => {
                             <Select label="Gender" name="gender" options={["Male", "Female", "Other"]} onChange={handleChange} />
                             <Input label="Date of Birth" name="dob" type="date" onChange={handleChange} />
                             <Input label="Age" name="age" type="number" placeholder="18" onChange={handleChange} />
-                            <Input label="Student ID / Roll Number" name="studentId" placeholder="REQ123456" onChange={handleChange} />
                         </div>
                     </div>
                 );
             case 2:
                 return (
                     <div className="space-y-4">
-                        <h3 className="text-xl font-black text-black mb-4">Contact Details</h3>
+                        <h3 className="text-xl font-black text-black mb-4">Academic Details</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <Input label="Mobile Number" name="mobile" placeholder="9876543210" onChange={handleChange} />
-                            <Input label="Email ID" name="email" type="email" placeholder="john@example.com" onChange={handleChange} />
-                        </div>
-                        <Input label="Address" name="address" placeholder="123 Main St" onChange={handleChange} />
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <Input label="City / District" name="city" placeholder="New York" onChange={handleChange} />
-                            <Input label="State" name="state" placeholder="NY" onChange={handleChange} />
-                            <Input label="Pincode" name="pincode" placeholder="10001" onChange={handleChange} />
+                            <Input label="UG College Name" name="ugCollege" placeholder="Your College Name" onChange={handleChange} />
+                            <Input label="UG College Academic Year" name="ugYear" placeholder="2018-2023" onChange={handleChange} />
+                            <Input label="PG College Name" name="pgCollege" placeholder="Government Siddha Medical College" onChange={handleChange} />
+                            <Input label="PG Academic Year" name="pgYear" placeholder="2024-2027" onChange={handleChange} />
+                            <Select label="Registered Category" name="category" options={["MRB", "AIAPGET"]} value={formData.category} onChange={handleChange} />
+                            <Input label="Register Number" name="regNo" placeholder="REG-2024-001" onChange={handleChange} />
                         </div>
                     </div>
                 );
             case 3:
-                return (
-                    <div className="space-y-4">
-                        <h3 className="text-xl font-black text-black mb-4">Academic Details</h3>
-                        <Input label="School / College Name" name="school" placeholder="University of Tech" onChange={handleChange} />
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <Input label="Course / Department" name="course" placeholder="B.Tech CS" onChange={handleChange} />
-                            <Select label="Class / Year / Semester" name="year" options={["1st Year", "2nd Year", "3rd Year", "4th Year"]} onChange={handleChange} />
-                            <Select label="Registered Category" name="category" options={["MRB", "AIAPGET"]} onChange={handleChange} />
-                            <Input label="Register Number" name="regNo" placeholder="REG-2024-001" onChange={handleChange} />
-                            <Input label="Academic Year" name="academicYear" placeholder="2024-2025" onChange={handleChange} />
-                        </div>
-                    </div>
-                );
-            case 4:
-                return (
-                    <div className="space-y-4">
-                        <h3 className="text-xl font-black text-black mb-4">Parent / Guardian Details</h3>
-                        <Input label="Father / Mother / Guardian Name" name="parentName" placeholder="Parent Name" onChange={handleChange} />
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <Input label="Parent Mobile Number" name="parentMobile" placeholder="9876543210" onChange={handleChange} />
-                            <Input label="Occupation" name="occupation" placeholder="Engineer" onChange={handleChange} />
-                        </div>
-                    </div>
-                );
-            case 5:
-                return (
-                    <div className="space-y-4">
-                        <h3 className="text-xl font-black text-black mb-4">Other Details</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <Select label="Blood Group" name="bloodGroup" options={["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"]} onChange={handleChange} />
-                            <Input label="Nationality" name="nationality" placeholder="Indian" onChange={handleChange} />
-                            <Input label="Religion / Community (Optional)" name="religion" placeholder="Hindu / BC" onChange={handleChange} />
-                            <Select label="Hostel / Day Scholar" name="residenceType" options={["Hosteller", "Day Scholar"]} onChange={handleChange} />
-                        </div>
-                    </div>
-                );
-            case 6:
                 return (
                     <div className="space-y-4">
                         <h3 className="text-xl font-black text-black mb-4">Account Setup</h3>
@@ -221,7 +187,7 @@ const StudentRegister = () => {
                     )}
 
                     {currentStep < steps.length ? (
-                        <Button onClick={nextStep} className="flex-1 !bg-black hover:!bg-gray-900 !text-white !font-black !shadow-lg">
+                        <Button type="button" onClick={nextStep} className="flex-1 !bg-black hover:!bg-gray-900 !text-white !font-black !shadow-lg">
                             Next <ChevronRight size={20} />
                         </Button>
                     ) : (
