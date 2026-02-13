@@ -30,8 +30,14 @@ const FacultyRegister = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
+        // If not on the last step (Login Setup), just move to the next step
+        if (currentStep < steps.length) {
+            nextStep();
+            return;
+        }
+
+        // We are on the last step (Login Setup)
         if (!formData.password || formData.password !== formData.confirmPassword) {
-            alert("Passwords do not match or are empty!");
             return;
         }
 

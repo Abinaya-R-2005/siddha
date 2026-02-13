@@ -29,14 +29,13 @@ const StudentRegister = () => {
         e.preventDefault();
 
         // If not on the last step (Account Setup), just move to the next step
-        if (currentStep < 3) {
+        if (currentStep < steps.length) {
             nextStep();
             return;
         }
 
         // We are on the last step (Account Setup)
         if (!formData.password || formData.password !== formData.confirmPassword) {
-            alert("Passwords do not match or are empty!");
             return;
         }
 
