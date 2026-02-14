@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Quote, Star, ArrowRight, ArrowLeft, GraduationCap } from 'lucide-react';
+import { Star, ArrowRight, ArrowLeft } from 'lucide-react';
 
 const TestimonialsSection = () => {
     const [reviews, setReviews] = useState([]);
@@ -75,55 +75,43 @@ const TestimonialsSection = () => {
                                 transition={{ duration: 0.4 }}
                                 className="w-full max-w-4xl"
                             >
-                                <div className="bg-white rounded-[2.5rem] p-8 md:p-12 border border-emerald-100 shadow-[0_20px_50px_-12px_rgba(16,185,129,0.1)] relative overflow-hidden min-h-[300px] flex flex-col md:flex-row gap-8 md:gap-12 items-center md:items-start">
+                                <div className="bg-white rounded-[2.5rem] p-8 md:p-14 border border-slate-100 shadow-[0_30px_60px_-12px_rgba(15,23,42,0.08)] relative overflow-hidden min-h-[350px] flex flex-col items-center text-center">
 
-                                    {/* Decorative Background Shape */}
-                                    <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-50 rounded-bl-[10rem] -z-0 opacity-50" />
-
-                                    {/* Profile Image Section */}
-                                    <div className="relative shrink-0 z-10 flex flex-col items-center">
-                                        <div className="w-32 h-32 md:w-40 md:h-40 rounded-full border-4 border-emerald-50 flex items-center justify-center bg-white shadow-sm overflow-hidden relative">
-                                            {/* Icon Placeholder instead of Name */}
-                                            <div className="w-full h-full bg-blue-50 flex items-center justify-center">
-                                                <GraduationCap size={48} className="text-blue-300" />
-                                            </div>
-                                        </div>
-                                        {/* Quote Badge */}
-                                        <div className="absolute -bottom-3 -right-3 md:bottom-2 md:right-0 bg-emerald-500 text-white p-3 rounded-full border-4 border-white shadow-lg z-20">
-                                            <Quote size={20} fill="currentColor" />
-                                        </div>
-                                    </div>
+                                    {/* Premium Decorative Elements */}
+                                    <div className="absolute top-0 right-0 w-64 h-64 bg-slate-50 rounded-bl-[10rem] -z-0 opacity-40" />
+                                    <div className="absolute -bottom-10 -left-10 w-48 h-48 bg-blue-50/50 rounded-tr-[10rem] -z-0 blur-2xl" />
 
                                     {/* Content Section */}
-                                    <div className="flex-1 text-center md:text-left z-10 w-full flex flex-col justify-between h-full pt-2">
-                                        <div>
-                                            <h3 className="text-2xl font-bold text-[#0F172A] mb-1">
-                                                {currentReview.name}
-                                            </h3>
-                                            <span className="text-xs font-bold text-emerald-500 uppercase tracking-widest mb-6 block">
-                                                {currentReview.role || "Student"}
-                                            </span>
-
-                                            <div className="relative">
-                                                <p className="text-slate-600 text-lg italic leading-relaxed mb-8 relative z-10">
-                                                    "{currentReview.text}"
-                                                </p>
-                                            </div>
-                                        </div>
-
-                                        <div className="border-t border-slate-100 pt-6 flex flex-col md:flex-row items-center justify-between gap-4">
-                                            <div className="flex gap-1">
+                                    <div className="relative z-10 w-full max-w-2xl flex flex-col items-center">
+                                        <div className="mb-8">
+                                            <div className="flex justify-center gap-1 mb-6">
                                                 {[...Array(5)].map((_, i) => (
                                                     <Star
                                                         key={i}
-                                                        size={20}
+                                                        size={22}
                                                         className={`${i < currentReview.rating ? 'text-amber-400 fill-amber-400' : 'text-slate-200'}`}
                                                     />
                                                 ))}
                                             </div>
-                                            <div className="flex items-center gap-2 text-slate-400 font-bold text-xs uppercase tracking-wider">
-                                                <div className="w-2 h-2 rounded-full bg-emerald-400" />
-                                                Verified Student
+
+                                            <p className="text-slate-700 text-xl md:text-2xl font-medium italic leading-relaxed mb-10">
+                                                "{currentReview.text}"
+                                            </p>
+
+                                            <div className="flex flex-col items-center">
+                                                <h3 className="text-2xl font-bold text-[#0F172A] mb-1">
+                                                    {currentReview.name}
+                                                </h3>
+                                                <div className="flex items-center gap-3">
+                                                    <span className="text-xs font-bold text-blue-600 uppercase tracking-widest">
+                                                        {currentReview.role || "Student"}
+                                                    </span>
+                                                    <span className="w-1 h-1 rounded-full bg-slate-300" />
+                                                    <div className="flex items-center gap-1.5 text-emerald-500 font-bold text-[10px] uppercase tracking-wider">
+                                                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                                                        Verified student
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
