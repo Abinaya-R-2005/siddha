@@ -302,10 +302,20 @@ app.get('/api/user/profile', verifyToken, async (req, res) => {
         let user;
         if (req.user.role === 'admin' || req.user.role === 'faculty') {
             user = await AdminUser.findById(req.user.id).select('-password');
+            res.json(user);
         } else {
             user = await User.findById(req.user.id).select('-password');
+            if (user && user.role === 'student') {
+                const attempts = await Attempt.find({ userId: user._id });
+                const avg = attempts.length > 0 ? (attempts.reduce((a, b) => a + b.score, 0) / attempts.length).toFixed(1) : 0;
+                const userObj = user.toObject();
+                userObj.testsCompleted = attempts.length;
+                userObj.averageScore = avg;
+                res.json(userObj);
+            } else {
+                res.json(user);
+            }
         }
-        res.json(user);
     } catch (err) { res.status(500).json({ message: err.message }); }
 });
 

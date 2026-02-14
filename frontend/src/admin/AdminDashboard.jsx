@@ -35,6 +35,7 @@ const AdminDashboard = () => {
     const [pendingRegistrations, setPendingRegistrations] = useState([]);
     const [requestType, setRequestType] = useState('registration'); // 'registration' or 'reattempt'
     const [reviews, setReviews] = useState([]);
+    const [editingReview, setEditingReview] = useState(null);
     const navigate = useNavigate();
 
     // ... fetchAllData ...
@@ -211,6 +212,20 @@ const AdminDashboard = () => {
             fetchAllData();
         } catch (err) {
             alert('Delete failed: ' + (err.response?.data?.message || err.message));
+        }
+    };
+
+    const requestUpdateReview = async (id, newText) => {
+        if (!newText.trim()) return;
+        try {
+            const token = localStorage.getItem('token');
+            await axios.put(`http://localhost:5000/api/admin/reviews/${id}`, { text: newText }, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setEditingReview(null);
+            fetchAllData();
+        } catch (err) {
+            alert('Failed to update review: ' + (err.response?.data?.message || err.message));
         }
     };
 
@@ -670,7 +685,22 @@ const AdminDashboard = () => {
                                                 <p className="text-xs text-slate-400">{review.userId?.email || 'N/A'}</p>
                                             </td>
                                             <td className="px-6 py-4 max-w-md">
-                                                <p className="text-slate-600 truncate" title={review.text}>{review.text}</p>
+                                                {editingReview?._id === review._id ? (
+                                                    <div className="flex flex-col gap-2">
+                                                        <textarea
+                                                            value={editingReview.text}
+                                                            onChange={(e) => setEditingReview({ ...editingReview, text: e.target.value })}
+                                                            className="w-full p-2 border rounded-lg text-sm"
+                                                            rows="3"
+                                                        />
+                                                        <div className="flex gap-2">
+                                                            <button onClick={() => requestUpdateReview(review._id, editingReview.text)} className="text-green-600 text-xs font-bold hover:underline">Save</button>
+                                                            <button onClick={() => setEditingReview(null)} className="text-red-500 text-xs font-bold hover:underline">Cancel</button>
+                                                        </div>
+                                                    </div>
+                                                ) : (
+                                                    <p className="text-slate-600 truncate" title={review.text}>{review.text}</p>
+                                                )}
                                             </td>
                                             <td className="px-6 py-4 text-center">
                                                 <div className="flex justify-center gap-0.5">
@@ -688,12 +718,15 @@ const AdminDashboard = () => {
                                             </td>
                                             <td className="px-6 py-4 text-right">
                                                 <div className="flex justify-end gap-2">
+                                                    <button onClick={() => setEditingReview(review)} className="text-blue-600 hover:bg-blue-50 p-1.5 rounded-lg transition-colors border border-blue-100" title="Edit">
+                                                        <Edit size={16} />
+                                                    </button>
                                                     {review.status !== 'approved' && (
                                                         <button onClick={() => handleReviewAction(review._id, 'approved')} className="text-green-600 hover:bg-green-50 p-1.5 rounded-lg transition-colors border border-green-100" title="Approve">
                                                             <Check size={16} />
                                                         </button>
                                                     )}
-                                                    {review.status !== 'rejected' && (
+                                                    {review.status !== 'rejected' && review.status !== 'approved' && (
                                                         <button onClick={() => handleReviewAction(review._id, 'rejected')} className="text-amber-600 hover:bg-amber-50 p-1.5 rounded-lg transition-colors border border-amber-100" title="Reject">
                                                             <X size={16} />
                                                         </button>

@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import {
     GraduationCap,
@@ -22,8 +22,11 @@ import {
     Zap,
     MessageSquare,
     Star,
-    Loader2
+    Loader2,
+    X
 } from 'lucide-react';
+import ReviewSection from '../components/ReviewSection';
+import TestimonialsSection from '../components/TestimonialsSection';
 
 const StudentHome = () => {
     const handleLogout = () => {
@@ -513,6 +516,10 @@ const StudentHome = () => {
                 </div>
             </section>
 
+            {/* Testimonials Section */}
+            {/* Testimonials Section */}
+            <TestimonialsSection />
+
             {/* Review Section */}
             <ReviewSection />
 
@@ -574,119 +581,8 @@ const FAQItem = ({ q, a, index }) => {
     );
 };
 
-const ReviewSection = () => {
-    const [text, setText] = useState('');
-    const [rating, setRating] = useState(5);
-    const [submitting, setSubmitting] = useState(false);
-    const [message, setMessage] = useState(null);
+// Removed inline ReviewSection component definition
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        setSubmitting(true);
-        setMessage(null);
-        try {
-            const response = await fetch('http://localhost:5000/api/user/reviews', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                },
-                body: JSON.stringify({ text, rating })
-            });
-            const data = await response.json();
-            if (response.ok) {
-                setMessage({ type: 'success', text: 'Thank you! Your review has been submitted for approval.' });
-                setText('');
-                setRating(5);
-            } else {
-                setMessage({ type: 'error', text: data.message || 'Something went wrong' });
-            }
-        } catch (error) {
-            setMessage({ type: 'error', text: 'Failed to connect to server' });
-        } finally {
-            setSubmitting(false);
-        }
-    };
 
-    return (
-        <section className="relative py-24 px-6">
-            <div className="max-w-4xl mx-auto">
-                <motion.div
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    whileInView={{ opacity: 1, scale: 1 }}
-                    className="bg-white/80 backdrop-blur-xl rounded-[3rem] p-10 shadow-2xl border border-white/40"
-                >
-                    <div className="text-center mb-10">
-                        <div className="bg-blue-500/10 p-4 rounded-2xl w-fit mx-auto mb-6">
-                            <MessageSquare className="text-blue-600" size={32} />
-                        </div>
-                        <h2 className="text-3xl font-serif font-bold text-[#0F172A] mb-2">Share Your Experience</h2>
-                        <p className="text-slate-600">Your feedback helps us grow and inspires other students.</p>
-                    </div>
-
-                    <form onSubmit={handleSubmit} className="space-y-8">
-                        <div className="flex flex-col items-center gap-4 p-6 bg-slate-50 rounded-2xl border border-slate-100">
-                            <label className="text-sm font-bold text-slate-700 uppercase tracking-widest">Rate Your Experience</label>
-                            <div className="flex gap-2">
-                                {[1, 2, 3, 4, 5].map((s) => (
-                                    <button
-                                        key={s}
-                                        type="button"
-                                        onClick={() => setRating(s)}
-                                        className="transition-transform active:scale-90"
-                                    >
-                                        <Star
-                                            size={32}
-                                            className={`${s <= rating ? 'text-amber-400 fill-amber-400' : 'text-slate-300'} transition-colors`}
-                                        />
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-
-                        <div className="space-y-2">
-                            <label className="text-sm font-bold text-slate-700 uppercase tracking-widest px-1">Your Review</label>
-                            <textarea
-                                required
-                                value={text}
-                                onChange={(e) => setText(e.target.value)}
-                                className="w-full bg-slate-50 border-2 border-transparent focus:border-blue-500 rounded-2xl p-6 transition-all outline-none text-lg min-h-[150px]"
-                                placeholder="Tell us how JCL Siddha Academy helped you..."
-                            />
-                        </div>
-
-                        {message && (
-                            <motion.div
-                                initial={{ opacity: 0, y: -10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                className={`p-4 rounded-xl text-center font-semibold ${message.type === 'success' ? 'bg-green-50 text-green-700 border border-green-100' : 'bg-red-50 text-red-700 border border-red-100'}`}
-                            >
-                                {message.text}
-                            </motion.div>
-                        )}
-
-                        <motion.button
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
-                            disabled={submitting}
-                            className="w-full bg-gradient-to-r from-[#0F172A] to-blue-900 text-white py-5 rounded-2xl font-bold flex items-center justify-center gap-3 shadow-2xl shadow-blue-900/30 hover:shadow-blue-900/50 transition-all disabled:opacity-50"
-                        >
-                            {submitting ? (
-                                <>
-                                    <Loader2 className="animate-spin" size={20} />
-                                    Submitting...
-                                </>
-                            ) : (
-                                <>
-                                    Submit Review <Send size={20} />
-                                </>
-                            )}
-                        </motion.button>
-                    </form>
-                </motion.div>
-            </div>
-        </section>
-    );
-};
 
 export default StudentHome;

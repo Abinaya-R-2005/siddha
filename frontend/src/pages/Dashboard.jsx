@@ -294,14 +294,7 @@ const Dashboard = () => {
         </section>
 
         {/* HEATMAP SECTION */}
-        <section className="bg-white p-8 rounded-2xl border border-gray-100 shadow-sm">
-          <h3 className="text-xl font-bold text-gray-900 mb-6">Consistency Streak</h3>
-          <div className="grid grid-flow-col grid-rows-7 gap-[12px] w-max overflow-x-auto">
-            {activityData.map((level, i) => (
-              <div key={i} className={`w-[18px] h-[18px] rounded-[2px] ${level === 0 ? 'bg-gray-100' : level === 1 ? 'bg-blue-100' : level === 2 ? 'bg-blue-300' : 'bg-[#0F172A]'}`} />
-            ))}
-          </div>
-        </section>
+
       </div>
     </DashboardLayout>
   );

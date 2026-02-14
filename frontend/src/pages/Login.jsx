@@ -46,6 +46,11 @@ const Login = () => {
     return (
         <AuthLayout>
             <div className="w-full">
+                <div className="mb-4">
+                    <Link to="/" className="text-gray-500 hover:text-black font-semibold text-sm flex items-center gap-1 transition-colors">
+                        ← Back to Home
+                    </Link>
+                </div>
                 <div className="flex bg-[#F1F3F5] p-1 rounded-2xl mb-8 w-full max-w-[300px] mx-auto md:mx-0 shadow-[inset_0_2px_4px_rgba(0,0,0,0.05)] border border-gray-200/50">
                     <button
                         type="button"
