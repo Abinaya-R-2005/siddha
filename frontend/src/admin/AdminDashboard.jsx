@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
-    TrendingUp, Calendar, FileText, ChevronDown, Trash2, Edit, Download, Upload, X, Check, Search, Users
+    TrendingUp, Calendar, FileText, ChevronDown, Trash2, Edit, Download, Upload, X, Check, Search, Users, Star
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useCallback } from 'react';
@@ -34,6 +34,7 @@ const AdminDashboard = () => {
     const [reattemptRequests, setReattemptRequests] = useState([]);
     const [pendingRegistrations, setPendingRegistrations] = useState([]);
     const [requestType, setRequestType] = useState('registration'); // 'registration' or 'reattempt'
+    const [reviews, setReviews] = useState([]);
     const navigate = useNavigate();
 
     // ... fetchAllData ...
@@ -115,6 +116,9 @@ const AdminDashboard = () => {
             const pendingRegRes = await axios.get('http://localhost:5000/api/admin/pending-registrations', config);
             setPendingRegistrations(pendingRegRes.data);
 
+            const reviewsRes = await axios.get('http://localhost:5000/api/admin/reviews', config);
+            setReviews(reviewsRes.data);
+
         } catch (err) {
             console.log("Using mock data as backend failed or unauthorized", err);
             if (err.response && (err.response.status === 401 || err.response.status === 403)) {
@@ -182,6 +186,31 @@ const AdminDashboard = () => {
         } catch (err) {
             console.error("Status update error", err);
             alert('Failed to update test status: ' + (err.response?.data?.message || err.message));
+        }
+    };
+
+    const handleReviewAction = async (id, status) => {
+        try {
+            const token = localStorage.getItem('token');
+            await axios.put(`http://localhost:5000/api/admin/reviews/${id}`, { status }, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            fetchAllData();
+        } catch (err) {
+            alert('Action failed: ' + (err.response?.data?.message || err.message));
+        }
+    };
+
+    const handleReviewDelete = async (id) => {
+        if (!window.confirm("Delete this review?")) return;
+        try {
+            const token = localStorage.getItem('token');
+            await axios.delete(`http://localhost:5000/api/admin/reviews/${id}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            fetchAllData();
+        } catch (err) {
+            alert('Delete failed: ' + (err.response?.data?.message || err.message));
         }
     };
 
@@ -277,6 +306,12 @@ const AdminDashboard = () => {
                             <>
                                 <h2 className="text-4xl font-serif font-bold text-[#0F172A] mb-2">Registration Approvals</h2>
                                 <p className="text-slate-500">Approve or reject new user registrations</p>
+                            </>
+                        )}
+                        {activeTab === 'Reviews' && (
+                            <>
+                                <h2 className="text-4xl font-serif font-bold text-[#0F172A] mb-2">Review Management</h2>
+                                <p className="text-slate-500">Moderate and approve student testimonials</p>
                             </>
                         )}
                     </div>
@@ -613,6 +648,73 @@ const AdminDashboard = () => {
                         </div>
                     )
                 }
+                {/* CONTENT: REVIEWS */}
+                {activeTab === 'Reviews' && (
+                    <div className="space-y-6">
+                        <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden shadow-sm">
+                            <table className="w-full text-left">
+                                <thead className="bg-slate-50 text-xs font-bold text-slate-500 uppercase">
+                                    <tr>
+                                        <th className="px-6 py-4">Student</th>
+                                        <th className="px-6 py-4">Review content</th>
+                                        <th className="px-6 py-4 text-center">Rating</th>
+                                        <th className="px-6 py-4">Status</th>
+                                        <th className="px-6 py-4 text-right">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100 text-sm">
+                                    {reviews.map((review, i) => (
+                                        <tr key={i} className="hover:bg-slate-50">
+                                            <td className="px-6 py-4">
+                                                <p className="font-bold text-slate-900">{review.name}</p>
+                                                <p className="text-xs text-slate-400">{review.userId?.email || 'N/A'}</p>
+                                            </td>
+                                            <td className="px-6 py-4 max-w-md">
+                                                <p className="text-slate-600 truncate" title={review.text}>{review.text}</p>
+                                            </td>
+                                            <td className="px-6 py-4 text-center">
+                                                <div className="flex justify-center gap-0.5">
+                                                    {[...Array(5)].map((_, idx) => (
+                                                        <Star key={idx} size={12} className={idx < review.rating ? "text-amber-400 fill-amber-400" : "text-slate-200"} />
+                                                    ))}
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <span className={`px-2 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${review.status === 'approved' ? 'bg-green-100 text-green-700' :
+                                                    review.status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'
+                                                    }`}>
+                                                    {review.status}
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-4 text-right">
+                                                <div className="flex justify-end gap-2">
+                                                    {review.status !== 'approved' && (
+                                                        <button onClick={() => handleReviewAction(review._id, 'approved')} className="text-green-600 hover:bg-green-50 p-1.5 rounded-lg transition-colors border border-green-100" title="Approve">
+                                                            <Check size={16} />
+                                                        </button>
+                                                    )}
+                                                    {review.status !== 'rejected' && (
+                                                        <button onClick={() => handleReviewAction(review._id, 'rejected')} className="text-amber-600 hover:bg-amber-50 p-1.5 rounded-lg transition-colors border border-amber-100" title="Reject">
+                                                            <X size={16} />
+                                                        </button>
+                                                    )}
+                                                    <button onClick={() => handleReviewDelete(review._id)} className="text-red-600 hover:bg-red-50 p-1.5 rounded-lg transition-colors border border-red-100" title="Delete">
+                                                        <Trash2 size={16} />
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                    {reviews.length === 0 && (
+                                        <tr>
+                                            <td colSpan="5" className="text-center py-10 text-slate-400">No reviews found</td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                )}
                 {/* CONTENT: SUBJECTS */}
                 {
                     activeTab === 'Subjects' && (

@@ -12,7 +12,12 @@ import {
     ChevronRight,
     ArrowRight,
     Send,
-    Award
+    Award,
+    Quote,
+    Star,
+    ArrowLeft,
+    ChevronLeft,
+    Loader2
 } from 'lucide-react';
 
 const Home = () => {
@@ -252,6 +257,21 @@ const Home = () => {
                 </div>
             </section>
 
+            {/* Testimonials Section */}
+            <section id="testimonials" className="py-24 bg-white px-6">
+                <div className="max-w-7xl mx-auto">
+                    <div className="text-center mb-16">
+                        <span className="text-blue-600 font-bold text-sm tracking-widest uppercase mb-4 inline-block">Testimonials</span>
+                        <h2 className="text-4xl md:text-5xl font-serif font-bold text-[#0F172A] mb-4">What Our Students Say</h2>
+                        <p className="text-slate-500 max-w-2xl mx-auto leading-relaxed">
+                            Join hundreds of successful students who have achieved their dreams with our guidance.
+                        </p>
+                    </div>
+
+                    <TestimonialCarousel />
+                </div>
+            </section>
+
             {/* FAQ Section */}
             <section id="faq" className="py-24 bg-slate-50 px-6">
                 <div className="max-w-4xl mx-auto">
@@ -392,6 +412,123 @@ const ContactInfo = ({ icon: Icon, label, value }) => (
         <div>
             <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">{label}</p>
             <p className="text-xl font-bold text-[#0F172A]">{value}</p>
+        </div>
+    </div>
+);
+
+const TestimonialCarousel = () => {
+    const [currentIndex, setCurrentIndex] = React.useState(0);
+    const [testimonials, setTestimonials] = React.useState([]);
+    const [loading, setLoading] = React.useState(true);
+
+    React.useEffect(() => {
+        const fetchReviews = async () => {
+            try {
+                const response = await fetch('http://localhost:5000/api/reviews/approved');
+                const data = await response.json();
+                setTestimonials(data);
+            } catch (error) {
+                console.error("Failed to fetch reviews:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchReviews();
+    }, []);
+
+    const next = () => setCurrentIndex((prev) => (prev + 1) % testimonials.length);
+    const prev = () => setCurrentIndex((prev) => (prev - 1 + testimonials.length) % testimonials.length);
+
+    if (loading) {
+        return (
+            <div className="flex justify-center py-20">
+                <Loader2 className="animate-spin text-blue-600" size={40} />
+            </div>
+        );
+    }
+
+    if (testimonials.length === 0) {
+        return (
+            <div className="text-center py-20 bg-slate-50 rounded-[2rem] border-2 border-dashed border-slate-200">
+                <p className="text-slate-400">No reviews yet. Be the first to share your journey!</p>
+            </div>
+        );
+    }
+
+    return (
+        <div className="relative max-w-4xl mx-auto">
+            <div className="overflow-hidden">
+                <motion.div
+                    key={currentIndex}
+                    initial={{ opacity: 0, x: 50 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -50 }}
+                    className="w-full"
+                >
+                    <TestimonialCard {...testimonials[currentIndex]} />
+                </motion.div>
+            </div>
+
+            {testimonials.length > 1 && (
+                <div className="flex justify-center gap-6 mt-12">
+                    <button
+                        onClick={prev}
+                        className="w-14 h-14 rounded-full border-2 border-slate-100 flex items-center justify-center text-[#0F172A] hover:bg-[#0F172A] hover:text-white transition-all shadow-lg active:scale-95"
+                    >
+                        <ArrowLeft size={24} />
+                    </button>
+                    <button
+                        onClick={next}
+                        className="w-14 h-14 rounded-full bg-[#0F172A] flex items-center justify-center text-white hover:bg-slate-800 transition-all shadow-lg shadow-slate-900/20 active:scale-95"
+                    >
+                        <ArrowRight size={24} />
+                    </button>
+                </div>
+            )}
+        </div>
+    );
+};
+
+const TestimonialCard = ({ name, role, text, image, rating }) => (
+    <div className="bg-white rounded-[2rem] border-2 border-emerald-500/30 p-8 md:p-12 relative overflow-hidden shadow-xl shadow-emerald-500/5">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-50 opacity-50 rounded-bl-[100%] transition-all" />
+
+        <div className="flex flex-col md:flex-row gap-10 items-start md:items-center relative z-10">
+            <div className="relative flex-shrink-0">
+                <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-emerald-500/20 p-1">
+                    <img src={image} alt={name} className="w-full h-full object-cover rounded-full" />
+                </div>
+                <div className="absolute -bottom-2 -right-2 bg-emerald-600 text-white p-2.5 rounded-full shadow-lg border-2 border-white">
+                    <Quote size={16} fill="currentColor" />
+                </div>
+            </div>
+
+            <div className="flex-1">
+                <div className="mb-6">
+                    <h4 className="text-2xl font-bold text-[#0F172A] mb-1">{name}</h4>
+                    <p className="text-emerald-600 text-sm font-bold tracking-wide uppercase">{role}</p>
+                </div>
+
+                <p className="text-slate-600 text-lg leading-relaxed mb-8 italic">
+                    "{text}"
+                </p>
+
+                <div className="flex items-center justify-between border-t border-slate-100 pt-8">
+                    <div className="flex gap-1">
+                        {[...Array(5)].map((_, i) => (
+                            <Star
+                                key={i}
+                                size={18}
+                                className={i < rating ? "text-amber-400 fill-amber-400" : "text-slate-200"}
+                            />
+                        ))}
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                        <span className="text-sm font-bold text-slate-400 uppercase tracking-widest">Verified Student</span>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 );

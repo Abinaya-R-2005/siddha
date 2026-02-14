@@ -173,6 +173,18 @@ const ReAttemptRequestSchema = new mongoose.Schema({
 
 const ReAttemptRequest = mongoose.model('ReAttemptRequest', ReAttemptRequestSchema);
 
+const ReviewSchema = new mongoose.Schema({
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    name: { type: String, required: true },
+    role: { type: String, required: true },
+    text: { type: String, required: true },
+    rating: { type: Number, default: 5 },
+    image: String,
+    status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' }
+}, { timestamps: true });
+
+const Review = mongoose.model('Review', ReviewSchema);
+
 // --- MIDDLEWARE ---
 
 const verifyToken = (req, res, next) => {
@@ -737,6 +749,56 @@ app.put('/api/admin/reattempt-requests/:id', verifyAdmin, async (req, res) => {
         // Removed Attempt.deleteOne to keep history accessible via Review button
 
         res.json({ message: `Request ${status}` });
+    } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
+// Review Routes
+app.post('/api/user/reviews', verifyToken, async (req, res) => {
+    try {
+        const { text, rating } = req.body;
+        const user = await User.findById(req.user.id);
+        if (!user) return res.status(404).json({ message: 'User not found' });
+
+        const review = new Review({
+            userId: user._id,
+            name: user.fullName,
+            role: user.expertise || (user.category === 'MRB' ? 'MRB Aspirant' : 'AIAPGET Aspirant'),
+            text,
+            rating,
+            image: "https://images.unsplash.com/photo-1559839734-2b71f1e9cbee?auto=format&fit=crop&q=80&w=200&h=200", // Default image or user image if available
+            status: 'pending'
+        });
+        await review.save();
+        res.status(201).json({ message: 'Review submitted for approval', review });
+    } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
+app.get('/api/reviews/approved', async (req, res) => {
+    try {
+        const reviews = await Review.find({ status: 'approved' }).sort({ createdAt: -1 });
+        res.json(reviews);
+    } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
+app.get('/api/admin/reviews', verifyAdmin, async (req, res) => {
+    try {
+        const reviews = await Review.find().populate('userId', 'fullName email').sort({ createdAt: -1 });
+        res.json(reviews);
+    } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
+app.put('/api/admin/reviews/:id', verifyAdmin, async (req, res) => {
+    try {
+        const updates = req.body;
+        const review = await Review.findByIdAndUpdate(req.params.id, updates, { new: true });
+        res.json(review);
+    } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
+app.delete('/api/admin/reviews/:id', verifyAdmin, async (req, res) => {
+    try {
+        await Review.findByIdAndDelete(req.params.id);
+        res.json({ message: 'Review deleted' });
     } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
